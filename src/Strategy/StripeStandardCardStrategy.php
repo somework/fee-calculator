@@ -39,7 +39,7 @@ final class StripeStandardCardStrategy extends AbstractFeeStrategy implements Fe
 
     public function calculateForward(CalculationRequest $request): CalculationResult
     {
-        $baseAmount = $request->getAmount();
+        $baseAmount = $request->getAmount()->getValue();
         $percentageFee = $this->multiply($baseAmount, $this->percentageRate);
         $feeAmount = $this->add($percentageFee, $this->fixedFee);
         $totalAmount = $this->add($baseAmount, $feeAmount);
@@ -56,7 +56,7 @@ final class StripeStandardCardStrategy extends AbstractFeeStrategy implements Fe
     {
         $this->ensureDirectionSupported($request->getDirection(), $this->supportsDirection($request->getDirection()), $this->name);
 
-        $totalAmount = $request->getAmount();
+        $totalAmount = $request->getAmount()->getValue();
         $denominator = $this->add('1', $this->percentageRate);
         $adjustedTotal = $this->subtract($totalAmount, $this->fixedFee);
         $baseAmount = $this->divide($adjustedTotal, $denominator);

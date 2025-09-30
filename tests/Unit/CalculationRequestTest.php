@@ -6,27 +6,31 @@ namespace SomeWork\FeeCalculator\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Exception\ValidationException;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationRequestTest extends TestCase
 {
     public function testForwardFactoryCreatesRequest(): void
     {
-        $request = CalculationRequest::forward('foo', '10.123', ['bar' => 'baz']);
+        $currency = new Currency('USD', 2);
+        $request = CalculationRequest::forward('foo', Amount::fromString('10.123', $currency), ['bar' => 'baz']);
 
         self::assertSame('foo', $request->getStrategyName());
-        self::assertSame('10.123', $request->getAmount());
+        self::assertSame('10.12', $request->getAmount()->getValue());
         self::assertSame(CalculationDirection::FORWARD, $request->getDirection());
         self::assertSame(['bar' => 'baz'], $request->getContext());
     }
 
     public function testBackwardFactoryCreatesRequest(): void
     {
-        $request = CalculationRequest::backward('bar', '99');
+        $currency = new Currency('EUR', 2);
+        $request = CalculationRequest::backward('bar', Amount::fromString('99', $currency));
 
         self::assertSame('bar', $request->getStrategyName());
-        self::assertSame('99', $request->getAmount());
+        self::assertSame('99.00', $request->getAmount()->getValue());
         self::assertSame(CalculationDirection::BACKWARD, $request->getDirection());
         self::assertSame([], $request->getContext());
     }
@@ -36,7 +40,8 @@ final class CalculationRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The strategy name must not be empty.');
 
-        CalculationRequest::forward('   ', '10');
+        $currency = new Currency('USD', 2);
+        CalculationRequest::forward('   ', Amount::fromString('10', $currency));
     }
 
     public function testInvalidAmountIsRejected(): void
@@ -44,30 +49,29 @@ final class CalculationRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The provided amount "ten" is not a valid numeric string.');
 
-        CalculationRequest::forward('foo', 'ten');
+        CalculationRequest::forwardFromString('foo', 'ten', new Currency('USD', 2));
     }
 
     public function testWithAmountClonesRequestAndValidates(): void
     {
-        $original = CalculationRequest::forward('foo', '10');
-        $updated = $original->withAmount('15.5');
+        $currency = new Currency('USD', 2);
+        $original = CalculationRequest::forward('foo', Amount::fromString('10', $currency));
+        $updated = $original->withAmount(Amount::fromString('15.5', $currency));
 
         self::assertNotSame($original, $updated);
-        self::assertSame('15.5', $updated->getAmount());
+        self::assertSame('15.50', $updated->getAmount()->getValue());
         self::assertSame($original->getContext(), $updated->getContext());
-
-        $this->expectException(ValidationException::class);
-        $original->withAmount('invalid');
     }
 
     public function testWithContextClonesRequest(): void
     {
-        $original = CalculationRequest::backward('bar', '20');
+        $currency = new Currency('USD', 2);
+        $original = CalculationRequest::backward('bar', Amount::fromString('20', $currency));
         $updated = $original->withContext(['foo' => 'bar']);
 
         self::assertNotSame($original, $updated);
         self::assertSame(['foo' => 'bar'], $updated->getContext());
-        self::assertSame('20', $updated->getAmount());
+        self::assertSame('20.00', $updated->getAmount()->getValue());
         self::assertSame($original->getDirection(), $updated->getDirection());
     }
 }

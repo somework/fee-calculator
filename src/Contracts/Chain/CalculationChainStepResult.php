@@ -6,16 +6,17 @@ namespace SomeWork\FeeCalculator\Contracts\Chain;
 
 use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Enum\ChainResultSelection;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationChainStepResult
 {
     private CalculationChainStep $step;
 
-    private string $inputAmount;
+    private Amount $inputAmount;
 
     private CalculationResult $result;
 
-    public function __construct(CalculationChainStep $step, string $inputAmount, CalculationResult $result)
+    public function __construct(CalculationChainStep $step, Amount $inputAmount, CalculationResult $result)
     {
         $this->step = $step;
         $this->inputAmount = $inputAmount;
@@ -27,7 +28,7 @@ final class CalculationChainStepResult
         return $this->step;
     }
 
-    public function getInputAmount(): string
+    public function getInputAmount(): Amount
     {
         return $this->inputAmount;
     }
@@ -37,7 +38,7 @@ final class CalculationChainStepResult
         return $this->result;
     }
 
-    public function getOutputAmount(): string
+    public function getOutputAmount(): Amount
     {
         return match ($this->step->getOutputSelection()) {
             ChainResultSelection::BASE => $this->result->getBaseAmount(),

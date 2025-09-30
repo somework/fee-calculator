@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace SomeWork\FeeCalculator\Contracts\Chain;
 
+use SomeWork\FeeCalculator\ValueObject\Amount;
+
 final class CalculationChainResult
 {
-    private string $initialAmount;
+    private Amount $initialAmount;
 
-    private string $finalAmount;
+    private Amount $finalAmount;
 
     /** @var list<CalculationChainStepResult> */
     private array $steps;
@@ -16,19 +18,19 @@ final class CalculationChainResult
     /**
      * @param list<CalculationChainStepResult> $steps
      */
-    public function __construct(string $initialAmount, string $finalAmount, array $steps)
+    public function __construct(Amount $initialAmount, Amount $finalAmount, array $steps)
     {
         $this->initialAmount = $initialAmount;
         $this->finalAmount = $finalAmount;
         $this->steps = $steps;
     }
 
-    public function getInitialAmount(): string
+    public function getInitialAmount(): Amount
     {
         return $this->initialAmount;
     }
 
-    public function getFinalAmount(): string
+    public function getFinalAmount(): Amount
     {
         return $this->finalAmount;
     }

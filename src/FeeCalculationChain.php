@@ -12,6 +12,7 @@ use SomeWork\FeeCalculator\Contracts\Chain\CalculationChainStepResult;
 use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Enum\ChainStepInputSource;
 use SomeWork\FeeCalculator\Exception\ValidationException;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class FeeCalculationChain
 {
@@ -27,9 +28,19 @@ final class FeeCalculationChain
         $stepResults = [];
         $previousResult = null;
         $previousOutputAmount = null;
+        $initialAmount = $this->calculator->normalizeAmount($request->getInitialAmount());
 
         foreach ($request->getSteps() as $index => $step) {
-            $inputAmount = $this->resolveInputAmount($request, $step, $previousResult, $previousOutputAmount, $index);
+            $inputAmount = $this->resolveInputAmount(
+                $request,
+                $step,
+                $previousResult,
+                $previousOutputAmount,
+                $index
+            );
+
+            $inputAmount = $this->calculator->normalizeAmount($inputAmount);
+            $this->assertCurrencyMatches($initialAmount, $inputAmount, $index);
 
             $calculationRequest = new CalculationRequest(
                 $step->getStrategyName(),
@@ -39,6 +50,7 @@ final class FeeCalculationChain
             );
 
             $result = $this->calculator->calculate($calculationRequest);
+            $this->assertResultCurrencies($result, $initialAmount, $index);
 
             $stepResult = new CalculationChainStepResult($step, $inputAmount, $result);
             $stepResults[] = $stepResult;
@@ -47,8 +59,9 @@ final class FeeCalculationChain
             $previousOutputAmount = $stepResult->getOutputAmount();
         }
 
-        $initialAmount = $this->calculator->normalizeAmount($request->getInitialAmount());
-        $finalAmount = $previousOutputAmount ?? $initialAmount;
+        $finalAmount = $previousOutputAmount !== null
+            ? $this->calculator->normalizeAmount($previousOutputAmount)
+            : $initialAmount;
 
         return new CalculationChainResult($initialAmount, $finalAmount, $stepResults);
     }
@@ -57,9 +70,9 @@ final class FeeCalculationChain
         CalculationChainRequest $chainRequest,
         CalculationChainStep $step,
         ?CalculationResult $previousResult,
-        ?string $previousOutputAmount,
+        ?Amount $previousOutputAmount,
         int $index
-    ): string {
+    ): Amount {
         return match ($step->getInputSource()) {
             ChainStepInputSource::INITIAL => $chainRequest->getInitialAmount(),
             ChainStepInputSource::PREVIOUS_OUTPUT => $this->requirePreviousOutput($previousOutputAmount, $index),
@@ -69,7 +82,7 @@ final class FeeCalculationChain
         };
     }
 
-    private function requirePreviousOutput(?string $output, int $index): string
+    private function requirePreviousOutput(?Amount $output, int $index): Amount
     {
         if ($output === null) {
             throw ValidationException::missingPreviousStepOutput($index + 1);
@@ -85,5 +98,23 @@ final class FeeCalculationChain
         }
 
         return $result;
+    }
+
+    private function assertCurrencyMatches(Amount $expected, Amount $actual, int $index): void
+    {
+        if ($expected->getCurrency()->getCode() !== $actual->getCurrency()->getCode()) {
+            throw ValidationException::mismatchedStepCurrency(
+                $index + 1,
+                $expected->getCurrency()->getCode(),
+                $actual->getCurrency()->getCode()
+            );
+        }
+    }
+
+    private function assertResultCurrencies(CalculationResult $result, Amount $expected, int $index): void
+    {
+        $this->assertCurrencyMatches($expected, $result->getBaseAmount(), $index);
+        $this->assertCurrencyMatches($expected, $result->getFeeAmount(), $index);
+        $this->assertCurrencyMatches($expected, $result->getTotalAmount(), $index);
     }
 }

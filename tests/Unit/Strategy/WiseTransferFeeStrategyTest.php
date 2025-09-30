@@ -6,42 +6,95 @@ namespace SomeWork\FeeCalculator\Tests\Unit\Strategy;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Strategy\WiseTransferFeeStrategy;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class WiseTransferFeeStrategyTest extends TestCase
 {
-    /** @var array<string, string> */
-    private array $context = [
-        'variable_percentage' => '0.008',
-        'fixed_fee' => '0.25',
-        'additional_percentage' => '0.001',
-        'additional_fixed_fee' => '0.05',
-    ];
-
-    public function testForwardCalculation(): void
+    /**
+     * @return iterable<string, array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     context: array<string, string>
+     * }>
+     */
+    public static function provideCalculations(): iterable
     {
-        $strategy = new WiseTransferFeeStrategy();
-        $request = CalculationRequest::forward($strategy->getName(), '200', $this->context);
+        yield 'customised fees' => [
+            '200',
+            '200.00',
+            '200.00',
+            '2.10',
+            '202.10',
+            [
+                'variable_percentage' => '0.008',
+                'fixed_fee' => '0.25',
+                'additional_percentage' => '0.001',
+                'additional_fixed_fee' => '0.05',
+            ],
+        ];
 
-        $result = $strategy->calculateForward($request);
+        yield 'defaults only' => ['50', '50.00', '49.99', '0.63', '50.63', []];
 
-        self::assertSame('200', $result->getBaseAmount());
-        self::assertSame('2.1', $result->getFeeAmount());
-        self::assertSame('202.1', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::FORWARD, $result->getDirection());
+        yield 'mixed adjustments' => [
+            '12.34',
+            '12.34',
+            '12.33',
+            '0.37',
+            '12.71',
+            [
+                'variable_percentage' => '0.0075',
+                'additional_percentage' => '0.0025',
+                'fixed_fee' => '0.20',
+                'additional_fixed_fee' => '0.05',
+            ],
+        ];
+
+        yield 'zero base corner case' => ['0', '0.00', '0.00', '0.31', '0.31', []];
     }
 
-    public function testBackwardCalculation(): void
-    {
+    /**
+     * @dataProvider provideCalculations
+     * @param array<string, string> $context
+     */
+    public function testBidirectionalCalculation(
+        string $baseInput,
+        string $expectedForwardBase,
+        string $expectedBackwardBase,
+        string $expectedFee,
+        string $expectedTotal,
+        array $context
+    ): void {
         $strategy = new WiseTransferFeeStrategy();
-        $request = CalculationRequest::backward($strategy->getName(), '202.1', $this->context);
+        $currency = new Currency('USD', 2);
 
-        $result = $strategy->calculateBackward($request);
+        $forwardRequest = CalculationRequest::forward(
+            $strategy->getName(),
+            Amount::fromString($baseInput, $currency),
+            $context
+        );
+        $forwardResult = $strategy->calculateForward($forwardRequest);
 
-        self::assertSame('200', $result->getBaseAmount());
-        self::assertSame('2.1', $result->getFeeAmount());
-        self::assertSame('202.1', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::BACKWARD, $result->getDirection());
+        self::assertSame($expectedForwardBase, $forwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $forwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $forwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::FORWARD, $forwardResult->getDirection());
+
+        $backwardRequest = CalculationRequest::backward(
+            $strategy->getName(),
+            Amount::fromString($expectedTotal, $currency),
+            $context
+        );
+        $backwardResult = $strategy->calculateBackward($backwardRequest);
+
+        self::assertSame($expectedBackwardBase, $backwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $backwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $backwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::BACKWARD, $backwardResult->getDirection());
     }
 }

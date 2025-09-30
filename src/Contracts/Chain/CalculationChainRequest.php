@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace SomeWork\FeeCalculator\Contracts\Chain;
 
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\ChainStepInputSource;
 use SomeWork\FeeCalculator\Exception\ValidationException;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationChainRequest
 {
-    private string $initialAmount;
+    private Amount $initialAmount;
 
     /** @var list<CalculationChainStep> */
     private array $steps;
 
-    public function __construct(string $initialAmount, CalculationChainStep ...$steps)
+    public function __construct(Amount $initialAmount, CalculationChainStep ...$steps)
     {
-        $this->initialAmount = $this->assertNumericString($initialAmount);
+        $this->initialAmount = $initialAmount;
 
         if ($steps === []) {
             throw ValidationException::emptyCalculationChain();
@@ -41,7 +43,7 @@ final class CalculationChainRequest
         $this->steps = $steps;
     }
 
-    public function getInitialAmount(): string
+    public function getInitialAmount(): Amount
     {
         return $this->initialAmount;
     }
@@ -54,12 +56,12 @@ final class CalculationChainRequest
         return $this->steps;
     }
 
-    private function assertNumericString(string $amount): string
+    public static function fromString(string $initialAmount, Currency $currency, CalculationChainStep ...$steps): self
     {
-        if (!preg_match('/^-?\d+(?:\.\d+)?$/', $amount)) {
-            throw ValidationException::invalidAmount($amount);
+        try {
+            return new self(Amount::fromString($initialAmount, $currency), ...$steps);
+        } catch (\InvalidArgumentException) {
+            throw ValidationException::invalidAmount($initialAmount);
         }
-
-        return $amount;
     }
 }

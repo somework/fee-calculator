@@ -77,13 +77,16 @@ use SomeWork\FeeCalculator\Contracts\CalculationRequest;
 use SomeWork\FeeCalculator\Strategy\CompositeFeeStrategy;
 use SomeWork\FeeCalculator\Strategy\StripeStandardCardStrategy;
 use SomeWork\FeeCalculator\Strategy\StripeInternationalSurchargeStrategy;
+use SomeWork\FeeCalculator\Currency\Currency;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 $composite = new CompositeFeeStrategy([
     new StripeStandardCardStrategy(),
     new StripeInternationalSurchargeStrategy(),
 ], 'stripe.full_stack');
 
-$request = CalculationRequest::forward('stripe.full_stack', '100.00');
+$currency = new Currency('USD', 2);
+$request = CalculationRequest::forward('stripe.full_stack', Amount::fromString('100.00', $currency));
 $result = $composite->calculateForward($request);
 ```
 

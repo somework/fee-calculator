@@ -9,11 +9,13 @@ use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
 use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Contracts\FeeStrategyInterface;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Exception\UnsupportedCalculationDirectionException;
 use SomeWork\FeeCalculator\Exception\ValidationException;
 use SomeWork\FeeCalculator\FeeCalculator;
 use SomeWork\FeeCalculator\Registry\StrategyRegistry;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class FeeCalculatorTest extends TestCase
 {
@@ -27,10 +29,12 @@ final class FeeCalculatorTest extends TestCase
             forward: function (CalculationRequest $request) use (&$receivedRequest): CalculationResult {
                 $receivedRequest = $request;
 
+                $currency = $request->getAmount()->getCurrency();
+
                 return new CalculationResult(
-                    '10.129',
-                    '0.505',
-                    '10.634',
+                    Amount::fromString('10.129', $currency),
+                    Amount::fromString('0.505', $currency),
+                    Amount::fromString('10.634', $currency),
                     CalculationDirection::FORWARD
                 );
             },
@@ -40,14 +44,15 @@ final class FeeCalculatorTest extends TestCase
         $registry = new StrategyRegistry([$strategy]);
         $calculator = new FeeCalculator($registry, 2);
 
-        $result = $calculator->calculate(CalculationRequest::forward('percentage', '10.125'));
+        $currency = new Currency('USD', 2);
+        $result = $calculator->calculate(CalculationRequest::forward('percentage', Amount::fromString('10.125', $currency)));
 
         self::assertInstanceOf(CalculationRequest::class, $receivedRequest);
-        self::assertSame('10.12', $receivedRequest->getAmount(), 'Request amount should be normalized.');
+        self::assertSame('10.12', $receivedRequest->getAmount()->getValue(), 'Request amount should be normalized.');
 
-        self::assertSame('10.12', $result->getBaseAmount());
-        self::assertSame('0.50', $result->getFeeAmount());
-        self::assertSame('10.63', $result->getTotalAmount());
+        self::assertSame('10.12', $result->getBaseAmount()->getValue());
+        self::assertSame('0.50', $result->getFeeAmount()->getValue());
+        self::assertSame('10.63', $result->getTotalAmount()->getValue());
     }
 
     public function testBackwardCalculationPathIsUsed(): void
@@ -59,8 +64,11 @@ final class FeeCalculatorTest extends TestCase
             forward: fn (CalculationRequest $request): CalculationResult => throw new \LogicException('Should not be called'),
             backward: fn (CalculationRequest $request): CalculationResult => new CalculationResult(
                 $request->getAmount(),
-                '1',
-                bcadd($request->getAmount(), '1', 4),
+                Amount::fromString('1', $request->getAmount()->getCurrency()),
+                Amount::fromString(
+                    bcadd($request->getAmount()->getValue(), '1', 4),
+                    $request->getAmount()->getCurrency()
+                ),
                 CalculationDirection::BACKWARD
             )
         );
@@ -68,11 +76,12 @@ final class FeeCalculatorTest extends TestCase
         $registry = new StrategyRegistry([$strategy]);
         $calculator = new FeeCalculator($registry, 3);
 
-        $result = $calculator->calculate(CalculationRequest::backward('flat', '20.5'));
+        $currency = new Currency('USD', 3);
+        $result = $calculator->calculate(CalculationRequest::backward('flat', Amount::fromString('20.5', $currency)));
 
-        self::assertSame('20.500', $result->getBaseAmount());
-        self::assertSame('1.000', $result->getFeeAmount());
-        self::assertSame('21.500', $result->getTotalAmount());
+        self::assertSame('20.500', $result->getBaseAmount()->getValue());
+        self::assertSame('1.000', $result->getFeeAmount()->getValue());
+        self::assertSame('21.500', $result->getTotalAmount()->getValue());
         self::assertSame(CalculationDirection::BACKWARD, $result->getDirection());
     }
 
@@ -83,7 +92,12 @@ final class FeeCalculatorTest extends TestCase
             supportsForward: false,
             supportsBackward: true,
             forward: fn (CalculationRequest $request): CalculationResult => throw new \LogicException('Should not be called'),
-            backward: fn (CalculationRequest $request): CalculationResult => new CalculationResult('0', '0', '0', CalculationDirection::BACKWARD)
+            backward: fn (CalculationRequest $request): CalculationResult => new CalculationResult(
+                Amount::fromString('0', $request->getAmount()->getCurrency()),
+                Amount::fromString('0', $request->getAmount()->getCurrency()),
+                Amount::fromString('0', $request->getAmount()->getCurrency()),
+                CalculationDirection::BACKWARD
+            )
         );
 
         $registry = new StrategyRegistry([$strategy]);
@@ -92,31 +106,17 @@ final class FeeCalculatorTest extends TestCase
         $this->expectException(UnsupportedCalculationDirectionException::class);
         $this->expectExceptionMessage('Strategy "unsupported" does not support "forward" calculations.');
 
-        $calculator->calculate(CalculationRequest::forward('unsupported', '10'));
+        $calculator->calculate(CalculationRequest::forward('unsupported', Amount::fromString('10', new Currency('USD', 2))));
     }
 
-    public function testThrowsWhenStrategyReturnsInvalidAmounts(): void
+    public function testNormalizeLegacyAmountRejectsInvalidStrings(): void
     {
-        $strategy = $this->createStrategy(
-            'broken',
-            supportsForward: true,
-            supportsBackward: true,
-            forward: fn (CalculationRequest $request): CalculationResult => new CalculationResult(
-                'ten',
-                '1',
-                '11',
-                CalculationDirection::FORWARD
-            ),
-            backward: fn (CalculationRequest $request): CalculationResult => new CalculationResult('0', '0', '0', CalculationDirection::BACKWARD)
-        );
-
-        $registry = new StrategyRegistry([$strategy]);
-        $calculator = new FeeCalculator($registry);
-
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The provided amount "ten" is not a valid numeric string.');
 
-        $calculator->calculate(CalculationRequest::forward('broken', '10'));
+        $calculator = new FeeCalculator(new StrategyRegistry());
+
+        $calculator->normalizeLegacyAmount('ten');
     }
 
     public function testScaleMustBeNonNegative(): void

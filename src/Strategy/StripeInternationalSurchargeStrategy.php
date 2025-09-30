@@ -36,7 +36,7 @@ final class StripeInternationalSurchargeStrategy extends AbstractFeeStrategy imp
 
     public function calculateForward(CalculationRequest $request): CalculationResult
     {
-        $baseAmount = $request->getAmount();
+        $baseAmount = $request->getAmount()->getValue();
         $feeAmount = $this->multiply($baseAmount, $this->percentageRate);
         $totalAmount = $this->add($baseAmount, $feeAmount);
 
@@ -50,7 +50,7 @@ final class StripeInternationalSurchargeStrategy extends AbstractFeeStrategy imp
 
     public function calculateBackward(CalculationRequest $request): CalculationResult
     {
-        $totalAmount = $request->getAmount();
+        $totalAmount = $request->getAmount()->getValue();
         $denominator = $this->add('1', $this->percentageRate);
         $baseAmount = $this->divide($totalAmount, $denominator);
         $feeAmount = $this->subtract($totalAmount, $baseAmount);

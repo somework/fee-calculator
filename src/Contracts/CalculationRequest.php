@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace SomeWork\FeeCalculator\Contracts;
 
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Exception\ValidationException;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationRequest
 {
@@ -13,7 +15,7 @@ final class CalculationRequest
 
     private CalculationDirection $direction;
 
-    private string $amount;
+    private Amount $amount;
 
     /** @var array<string, mixed> */
     private array $context;
@@ -21,7 +23,7 @@ final class CalculationRequest
     /**
      * @param array<string, mixed> $context
      */
-    public function __construct(string $strategyName, CalculationDirection $direction, string $amount, array $context = [])
+    public function __construct(string $strategyName, CalculationDirection $direction, Amount $amount, array $context = [])
     {
         $strategyName = trim($strategyName);
         if ($strategyName === '') {
@@ -30,14 +32,14 @@ final class CalculationRequest
 
         $this->strategyName = $strategyName;
         $this->direction = $direction;
-        $this->amount = $this->assertNumericString($amount);
+        $this->amount = $amount;
         $this->context = $context;
     }
 
     /**
      * @param array<string, mixed> $context
      */
-    public static function forward(string $strategyName, string $amount, array $context = []): self
+    public static function forward(string $strategyName, Amount $amount, array $context = []): self
     {
         return new self($strategyName, CalculationDirection::FORWARD, $amount, $context);
     }
@@ -45,9 +47,35 @@ final class CalculationRequest
     /**
      * @param array<string, mixed> $context
      */
-    public static function backward(string $strategyName, string $amount, array $context = []): self
+    public static function backward(string $strategyName, Amount $amount, array $context = []): self
     {
         return new self($strategyName, CalculationDirection::BACKWARD, $amount, $context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @deprecated Use {@see forward()} with an {@see Amount} instance instead.
+     */
+    public static function forwardFromString(
+        string $strategyName,
+        string $amount,
+        Currency $currency,
+        array $context = []
+    ): self {
+        return self::forward($strategyName, self::createAmountFromString($amount, $currency), $context);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @deprecated Use {@see backward()} with an {@see Amount} instance instead.
+     */
+    public static function backwardFromString(
+        string $strategyName,
+        string $amount,
+        Currency $currency,
+        array $context = []
+    ): self {
+        return self::backward($strategyName, self::createAmountFromString($amount, $currency), $context);
     }
 
     public function getStrategyName(): string
@@ -60,7 +88,7 @@ final class CalculationRequest
         return $this->direction;
     }
 
-    public function getAmount(): string
+    public function getAmount(): Amount
     {
         return $this->amount;
     }
@@ -73,9 +101,17 @@ final class CalculationRequest
         return $this->context;
     }
 
-    public function withAmount(string $amount): self
+    public function withAmount(Amount $amount): self
     {
         return new self($this->strategyName, $this->direction, $amount, $this->context);
+    }
+
+    /**
+     * @deprecated Use {@see withAmount()} with an {@see Amount} instance instead.
+     */
+    public function withAmountFromString(string $amount, Currency $currency): self
+    {
+        return $this->withAmount(self::createAmountFromString($amount, $currency));
     }
 
     /**
@@ -86,12 +122,13 @@ final class CalculationRequest
         return new self($this->strategyName, $this->direction, $this->amount, $context);
     }
 
-    private function assertNumericString(string $amount): string
+    private static function createAmountFromString(string $amount, Currency $currency): Amount
     {
-        if (!preg_match('/^-?\d+(?:\.\d+)?$/', $amount)) {
+        try {
+            return Amount::fromString($amount, $currency);
+        } catch (\InvalidArgumentException) {
             throw ValidationException::invalidAmount($amount);
         }
-
-        return $amount;
     }
 }
+
