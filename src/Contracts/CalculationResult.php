@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace SomeWork\FeeCalculator\Contracts;
 
-use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
-use SomeWork\FeeCalculator\Exception\ValidationException;
 use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationResult
@@ -70,24 +68,6 @@ final class CalculationResult
     public function withAmounts(Amount $baseAmount, Amount $feeAmount, Amount $totalAmount): self
     {
         return new self($baseAmount, $feeAmount, $totalAmount, $this->direction, $this->context);
-    }
-
-    public function withAmountStrings(string $baseAmount, string $feeAmount, string $totalAmount, Currency $currency): self
-    {
-        return $this->withAmounts(
-            self::stringToAmount($baseAmount, $currency),
-            self::stringToAmount($feeAmount, $currency),
-            self::stringToAmount($totalAmount, $currency)
-        );
-    }
-
-    private static function stringToAmount(string $value, Currency $currency): Amount
-    {
-        try {
-            return Amount::fromString($value, $currency);
-        } catch (\InvalidArgumentException) {
-            throw ValidationException::invalidAmount($value);
-        }
     }
 
     /**

@@ -109,16 +109,6 @@ final class FeeCalculatorTest extends TestCase
         $calculator->calculate(CalculationRequest::forward('unsupported', Amount::fromString('10', new Currency('USD', 2))));
     }
 
-    public function testNormalizeLegacyAmountRejectsInvalidStrings(): void
-    {
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('The provided amount "ten" is not a valid numeric string.');
-
-        $calculator = new FeeCalculator(new StrategyRegistry());
-
-        $calculator->normalizeLegacyAmount('ten');
-    }
-
     public function testScaleMustBeNonNegative(): void
     {
         $this->expectException(ValidationException::class);

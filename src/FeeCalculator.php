@@ -63,18 +63,4 @@ final class FeeCalculator
 
         return Amount::fromString($normalizedValue, $currency);
     }
-
-    /**
-     * @deprecated Use {@see normalizeAmount()} with an {@see Amount} instance instead.
-     */
-    public function normalizeLegacyAmount(string $value, ?int $scale = null): string
-    {
-        if (!preg_match('/^-?\d+(?:\.\d+)?$/', $value)) {
-            throw ValidationException::invalidAmount($value);
-        }
-
-        $scaleToUse = $scale ?? $this->legacyScale;
-
-        return bcadd($value, '0', $scaleToUse);
-    }
 }

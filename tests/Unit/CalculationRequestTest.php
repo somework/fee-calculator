@@ -44,14 +44,6 @@ final class CalculationRequestTest extends TestCase
         CalculationRequest::forward('   ', Amount::fromString('10', $currency));
     }
 
-    public function testInvalidAmountIsRejected(): void
-    {
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('The provided amount "ten" is not a valid numeric string.');
-
-        CalculationRequest::forwardFromString('foo', 'ten', new Currency('USD', 2));
-    }
-
     public function testWithAmountClonesRequestAndValidates(): void
     {
         $currency = new Currency('USD', 2);
