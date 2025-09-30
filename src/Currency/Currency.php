@@ -40,5 +40,4 @@ final class Currency
     {
         return $this->precision;
     }
-
 }
