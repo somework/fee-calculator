@@ -11,7 +11,7 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
 final class StripeStandardCardStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'stripe.standard_card';
+    private const DEFAULT_NAME = 'stripe.standard_card';
 
     private string $name;
 

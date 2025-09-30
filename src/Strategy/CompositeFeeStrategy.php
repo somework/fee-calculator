@@ -10,12 +10,9 @@ use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Contracts\FeeStrategyInterface;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
-/**
- * @implements FeeStrategyInterface
- */
 final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'composite';
+    private const DEFAULT_NAME = 'composite';
 
     /** @var list<FeeStrategyInterface> */
     private array $strategies;
@@ -24,6 +21,9 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
 
     private int $maxIterations;
 
+    /**
+     * @param list<FeeStrategyInterface> $strategies
+     */
     public function __construct(array $strategies, string $name = self::DEFAULT_NAME, int $scale = 8, int $maxIterations = 50)
     {
         parent::__construct($scale);

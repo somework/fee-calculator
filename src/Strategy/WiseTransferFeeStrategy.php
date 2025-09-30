@@ -11,7 +11,7 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
 final class WiseTransferFeeStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'wise.transfer';
+    private const DEFAULT_NAME = 'wise.transfer';
 
     private string $name;
 
