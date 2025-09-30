@@ -23,12 +23,17 @@
         "phpstan/phpstan-deprecation-rules": "^1.1"
     },
     "scripts": {
-        "test": "phpunit",
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "@php -r \"if (!extension_loaded('xdebug') && !extension_loaded('pcov')) { fwrite(STDERR, 'No code coverage driver available; running without coverage.' . PHP_EOL); passthru('vendor/bin/phpunit', $status); exit($status); } if (extension_loaded('xdebug')) { putenv('XDEBUG_MODE=coverage'); } passthru('vendor/bin/phpunit --coverage-text', $status); exit($status);\"",
         "analyse": [
             "@phpstan",
             "@phpstan-deprecation"
         ],
-        "phpstan": "phpstan analyse --configuration=phpstan.neon.dist",
-        "phpstan-deprecation": "phpstan analyse --configuration=phpstan-deprecation.neon"
+        "check": [
+            "@analyse",
+            "@test"
+        ],
+        "phpstan": "vendor/bin/phpstan analyse --configuration=phpstan.neon.dist",
+        "phpstan-deprecation": "vendor/bin/phpstan analyse --configuration=phpstan-deprecation.neon"
     }
 }
