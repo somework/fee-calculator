@@ -12,7 +12,7 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
 final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'composite';
+    private const DEFAULT_NAME = 'composite';
 
     /** @var list<FeeStrategyInterface> */
     private array $strategies;

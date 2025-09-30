@@ -11,7 +11,7 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
 final class StripeInternationalSurchargeStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'stripe.international_surcharge';
+    private const DEFAULT_NAME = 'stripe.international_surcharge';
 
     private string $name;
 

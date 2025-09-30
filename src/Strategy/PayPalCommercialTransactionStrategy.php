@@ -11,7 +11,7 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
 final class PayPalCommercialTransactionStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'paypal.commercial_transaction';
+    private const DEFAULT_NAME = 'paypal.commercial_transaction';
 
     private string $name;
 

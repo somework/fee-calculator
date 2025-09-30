@@ -11,7 +11,7 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 
 final class AdyenInterchangePlusPlusStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
-    private const string DEFAULT_NAME = 'adyen.interchange_plus_plus';
+    private const DEFAULT_NAME = 'adyen.interchange_plus_plus';
 
     private string $name;
 
