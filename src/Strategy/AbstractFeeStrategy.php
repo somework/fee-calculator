@@ -98,6 +98,7 @@ abstract class AbstractFeeStrategy
 
     /**
      * @param array<string, mixed> $context
+     * @param array<string, mixed> $componentContext
      * @return array<string, mixed>
      */
     protected function mergeComponentContext(array $context, array $componentContext): array
@@ -105,6 +106,9 @@ abstract class AbstractFeeStrategy
         return array_replace($context, $componentContext);
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     protected function createForwardResult(
         CalculationRequest $request,
         string $baseAmount,
@@ -121,6 +125,9 @@ abstract class AbstractFeeStrategy
         );
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     protected function createBackwardResult(
         CalculationRequest $request,
         string $baseAmount,
