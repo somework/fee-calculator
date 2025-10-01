@@ -10,6 +10,7 @@ use SomeWork\FeeCalculator\Contracts\CalculationRequest;
 use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Contracts\Chain\CalculationChainRequest;
 use SomeWork\FeeCalculator\Contracts\Chain\CalculationChainStep;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Enum\ChainResultSelection;
 use SomeWork\FeeCalculator\Enum\ChainStepInputSource;
@@ -19,6 +20,7 @@ use SomeWork\FeeCalculator\FeeCalculationChain;
 use SomeWork\FeeCalculator\FeeCalculator;
 use SomeWork\FeeCalculator\Registry\StrategyRegistry;
 use SomeWork\FeeCalculator\Contracts\FeeStrategyInterface;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class FeeCalculationChainTest extends TestCase
 {
@@ -32,8 +34,9 @@ final class FeeCalculationChainTest extends TestCase
         $calculator = new FeeCalculator($registry, 4);
         $chain = new FeeCalculationChain($calculator);
 
+        $currency = new Currency('USD', 4);
         $request = new CalculationChainRequest(
-            '100',
+            Amount::fromString('100', $currency),
             new CalculationChainStep(
                 'conversion',
                 'percentage',
@@ -58,20 +61,20 @@ final class FeeCalculationChainTest extends TestCase
 
         $result = $chain->calculate($request);
 
-        self::assertSame('100.0000', $result->getInitialAmount());
-        self::assertSame('104.0000', $result->getFinalAmount());
+        self::assertSame('100.0000', $result->getInitialAmount()->getValue());
+        self::assertSame('104.0000', $result->getFinalAmount()->getValue());
 
         $steps = $result->getSteps();
         self::assertCount(2, $steps);
 
         $first = $steps[0];
         self::assertSame('conversion', $first->getStep()->getIdentifier());
-        self::assertSame('101.5000', $first->getOutputAmount());
+        self::assertSame('101.5000', $first->getOutputAmount()->getValue());
         self::assertSame('0.015', $first->getResult()->getContext()['fee_percent']);
 
         $second = $steps[1];
         self::assertSame('withdrawal', $second->getStep()->getIdentifier());
-        self::assertSame('104.0000', $second->getOutputAmount());
+        self::assertSame('104.0000', $second->getOutputAmount()->getValue());
         self::assertSame('2.5000', $second->getResult()->getContext()['fee_fix']);
 
         self::assertSame($second, $result->getLastStepResult());
@@ -122,7 +125,7 @@ final class FeeCalculationChainTest extends TestCase
 
         $initialProperty = $reflection->getProperty('initialAmount');
         $initialProperty->setAccessible(true);
-        $initialProperty->setValue($request, $initialAmount);
+        $initialProperty->setValue($request, Amount::fromString($initialAmount, new Currency('USD', 2)));
 
         $stepsProperty = $reflection->getProperty('steps');
         $stepsProperty->setAccessible(true);
@@ -146,7 +149,8 @@ final class PercentageFeeStrategy implements FeeStrategyInterface
 
     public function calculateForward(CalculationRequest $request): CalculationResult
     {
-        $base = bcadd($request->getAmount(), '0', 4);
+        $baseAmount = $request->getAmount();
+        $base = bcadd($baseAmount->getValue(), '0', 4);
         $contextPercent = $request->getContext()['fee_percent'] ?? '0';
 
         if (!is_string($contextPercent)) {
@@ -159,9 +163,9 @@ final class PercentageFeeStrategy implements FeeStrategyInterface
         $total = bcadd($base, $normalizedFee, 4);
 
         return new CalculationResult(
-            $base,
-            $normalizedFee,
-            $total,
+            Amount::fromString($base, $baseAmount->getCurrency()),
+            Amount::fromString($normalizedFee, $baseAmount->getCurrency()),
+            Amount::fromString($total, $baseAmount->getCurrency()),
             CalculationDirection::FORWARD,
             [
                 'fee_percent' => $percent,
@@ -189,7 +193,8 @@ final class FixedFeeStrategy implements FeeStrategyInterface
 
     public function calculateForward(CalculationRequest $request): CalculationResult
     {
-        $base = bcadd($request->getAmount(), '0', 4);
+        $baseAmount = $request->getAmount();
+        $base = bcadd($baseAmount->getValue(), '0', 4);
         $contextFix = $request->getContext()['fee_fix'] ?? '0';
 
         if (!is_string($contextFix)) {
@@ -201,9 +206,9 @@ final class FixedFeeStrategy implements FeeStrategyInterface
         $total = bcadd($base, $normalizedFee, 4);
 
         return new CalculationResult(
-            $base,
-            $normalizedFee,
-            $total,
+            Amount::fromString($base, $baseAmount->getCurrency()),
+            Amount::fromString($normalizedFee, $baseAmount->getCurrency()),
+            Amount::fromString($total, $baseAmount->getCurrency()),
             CalculationDirection::FORWARD,
             [
                 'fee_fix' => $normalizedFee,

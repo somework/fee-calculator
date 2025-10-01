@@ -7,16 +7,19 @@ namespace SomeWork\FeeCalculator\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\Chain\CalculationChainRequest;
 use SomeWork\FeeCalculator\Contracts\Chain\CalculationChainStep;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Enum\ChainStepInputSource;
 use SomeWork\FeeCalculator\Exception\ValidationException;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationChainRequestTest extends TestCase
 {
     public function testConstructsRequest(): void
     {
+        $currency = new Currency('USD', 2);
         $request = new CalculationChainRequest(
-            '100.5',
+            Amount::fromString('100.5', $currency),
             new CalculationChainStep(
                 'conversion',
                 'percentage',
@@ -31,7 +34,7 @@ final class CalculationChainRequestTest extends TestCase
             )
         );
 
-        self::assertSame('100.5', $request->getInitialAmount());
+        self::assertSame('100.50', $request->getInitialAmount()->getValue());
         self::assertCount(2, $request->getSteps());
     }
 
@@ -40,7 +43,7 @@ final class CalculationChainRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The calculation chain must contain at least one step.');
 
-        new CalculationChainRequest('10', ...[]);
+        new CalculationChainRequest(Amount::fromString('10', new Currency('USD', 2)), ...[]);
     }
 
     public function testRejectsInvalidInitialAmount(): void
@@ -48,7 +51,7 @@ final class CalculationChainRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The provided amount "ten" is not a valid numeric string.');
 
-        new CalculationChainRequest('ten', new CalculationChainStep(
+        CalculationChainRequest::fromString('ten', new Currency('USD', 2), new CalculationChainStep(
             'first',
             'strategy',
             CalculationDirection::FORWARD,
@@ -61,7 +64,7 @@ final class CalculationChainRequestTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('The first step must use the "INITIAL" input source, "PREVIOUS_OUTPUT" given.');
 
-        new CalculationChainRequest('10', new CalculationChainStep(
+        new CalculationChainRequest(Amount::fromString('10', new Currency('USD', 2)), new CalculationChainStep(
             'first',
             'strategy',
             CalculationDirection::FORWARD,
@@ -75,7 +78,7 @@ final class CalculationChainRequestTest extends TestCase
         $this->expectExceptionMessage('Only the first step may use the "INITIAL" input source; step #2 configured "INITIAL".');
 
         new CalculationChainRequest(
-            '10',
+            Amount::fromString('10', new Currency('USD', 2)),
             new CalculationChainStep(
                 'first',
                 'strategy',

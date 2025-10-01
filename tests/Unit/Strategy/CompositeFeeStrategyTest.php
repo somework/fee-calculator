@@ -7,49 +7,122 @@ namespace SomeWork\FeeCalculator\Tests\Unit\Strategy;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Strategy\CompositeFeeStrategy;
 use SomeWork\FeeCalculator\Strategy\StripeInternationalSurchargeStrategy;
 use SomeWork\FeeCalculator\Strategy\StripeStandardCardStrategy;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CompositeFeeStrategyTest extends TestCase
 {
-    public function testForwardAggregatesChildStrategies(): void
+    /**
+     * @return iterable<string, list<array{
+     *     baseInput: string,
+     *     expectedBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     expectedComponents: array<string, array{base: string, fee: string, total: string}>
+     * }>>
+     */
+    public static function provideCalculations(): iterable
     {
-        $strategy = new CompositeFeeStrategy([
-            new StripeStandardCardStrategy(),
-            new StripeInternationalSurchargeStrategy(),
-        ], 'stripe.bundle');
+        yield 'typical amount' => [[
+            'baseInput' => '100',
+            'expectedBase' => '100.00',
+            'expectedFee' => '4.70',
+            'expectedTotal' => '104.70',
+            'expectedComponents' => [
+                'stripe.standard_card' => ['base' => '100.00', 'fee' => '3.20', 'total' => '103.20'],
+                'stripe.international_surcharge' => ['base' => '100.00', 'fee' => '1.50', 'total' => '101.50'],
+            ],
+        ]];
 
-        $request = CalculationRequest::forward('stripe.bundle', '100');
-        $result = $strategy->calculateForward($request);
+        yield 'zero amount corner case' => [[
+            'baseInput' => '0',
+            'expectedBase' => '0.00',
+            'expectedFee' => '0.30',
+            'expectedTotal' => '0.30',
+            'expectedComponents' => [
+                'stripe.standard_card' => ['base' => '0.00', 'fee' => '0.30', 'total' => '0.30'],
+                'stripe.international_surcharge' => ['base' => '0.00', 'fee' => '0.00', 'total' => '0.00'],
+            ],
+        ]];
 
-        self::assertSame('100', $result->getBaseAmount());
-        self::assertSame('4.7', $result->getFeeAmount());
-        self::assertSame('104.7', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::FORWARD, $result->getDirection());
-
-        $componentResults = $result->getContext()['component_results'] ?? [];
-        self::assertIsArray($componentResults);
-        self::assertCount(2, $componentResults);
-        self::assertArrayHasKey('stripe.standard_card', $componentResults);
-        self::assertArrayHasKey('stripe.international_surcharge', $componentResults);
+        yield 'fractional amount' => [[
+            'baseInput' => '12.34',
+            'expectedBase' => '12.34',
+            'expectedFee' => '0.83',
+            'expectedTotal' => '13.17',
+            'expectedComponents' => [
+                'stripe.standard_card' => ['base' => '12.34', 'fee' => '0.65', 'total' => '12.99'],
+                'stripe.international_surcharge' => ['base' => '12.34', 'fee' => '0.18', 'total' => '12.52'],
+            ],
+        ]];
     }
 
-    public function testBackwardAggregatesChildStrategies(): void
+    /**
+     * @dataProvider provideCalculations
+     * @param array{
+     *     baseInput: string,
+     *     expectedBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     expectedComponents: array<string, array{base: string, fee: string, total: string}>
+     * } $case
+     */
+    public function testBidirectionalCalculation(array $case): void
     {
+        [
+            'baseInput' => $baseInput,
+            'expectedBase' => $expectedBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+            'expectedComponents' => $expectedComponents,
+        ] = $case;
+
         $strategy = new CompositeFeeStrategy([
             new StripeStandardCardStrategy(),
             new StripeInternationalSurchargeStrategy(),
         ], 'stripe.bundle');
 
-        $request = CalculationRequest::backward('stripe.bundle', '104.7');
-        $result = $strategy->calculateBackward($request);
+        $currency = new Currency('USD', 2);
 
-        self::assertSame('100', $result->getBaseAmount());
-        self::assertSame('4.7', $result->getFeeAmount());
-        self::assertSame('104.7', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::BACKWARD, $result->getDirection());
+        $forwardRequest = CalculationRequest::forward('stripe.bundle', Amount::fromString($baseInput, $currency));
+        $forwardResult = $strategy->calculateForward($forwardRequest);
+
+        self::assertSame($expectedBase, $forwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $forwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $forwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::FORWARD, $forwardResult->getDirection());
+
+        $forwardComponents = $forwardResult->getContext()['component_results'] ?? null;
+        self::assertIsArray($forwardComponents);
+        self::assertCount(count($expectedComponents), $forwardComponents);
+        foreach ($expectedComponents as $component => $values) {
+            self::assertArrayHasKey($component, $forwardComponents);
+            self::assertSame($values['base'], $forwardComponents[$component]['base_amount'] ?? null);
+            self::assertSame($values['fee'], $forwardComponents[$component]['fee_amount'] ?? null);
+            self::assertSame($values['total'], $forwardComponents[$component]['total_amount'] ?? null);
+        }
+
+        $backwardRequest = CalculationRequest::backward('stripe.bundle', Amount::fromString($expectedTotal, $currency));
+        $backwardResult = $strategy->calculateBackward($backwardRequest);
+
+        self::assertSame($expectedBase, $backwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $backwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $backwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::BACKWARD, $backwardResult->getDirection());
+
+        $backwardComponents = $backwardResult->getContext()['component_results'] ?? null;
+        self::assertIsArray($backwardComponents);
+        self::assertCount(count($expectedComponents), $backwardComponents);
+        foreach ($expectedComponents as $component => $values) {
+            self::assertArrayHasKey($component, $backwardComponents);
+            self::assertSame($values['base'], $backwardComponents[$component]['base_amount'] ?? null);
+            self::assertSame($values['fee'], $backwardComponents[$component]['fee_amount'] ?? null);
+            self::assertSame($values['total'], $backwardComponents[$component]['total_amount'] ?? null);
+        }
     }
 
     public function testBackwardThrowsWhenBelowMinimalTotal(): void
@@ -59,7 +132,8 @@ final class CompositeFeeStrategyTest extends TestCase
             new StripeInternationalSurchargeStrategy(),
         ], 'stripe.bundle');
 
-        $request = CalculationRequest::backward('stripe.bundle', '0.1');
+        $currency = new Currency('USD', 2);
+        $request = CalculationRequest::backward('stripe.bundle', Amount::fromString('0.1', $currency));
 
         $this->expectException(InvalidArgumentException::class);
         $strategy->calculateBackward($request);

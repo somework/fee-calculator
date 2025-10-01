@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace SomeWork\FeeCalculator\Strategy;
 
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
+use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Exception\UnsupportedCalculationDirectionException;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 abstract class AbstractFeeStrategy
 {
@@ -115,11 +117,13 @@ abstract class AbstractFeeStrategy
         string $feeAmount,
         string $totalAmount,
         array $context = []
-    ): \SomeWork\FeeCalculator\Contracts\CalculationResult {
-        return new \SomeWork\FeeCalculator\Contracts\CalculationResult(
-            $this->normalize($baseAmount),
-            $this->normalize($feeAmount),
-            $this->normalize($totalAmount),
+    ): CalculationResult {
+        $currency = $request->getAmount()->getCurrency();
+
+        return new CalculationResult(
+            Amount::fromString($this->normalize($baseAmount), $currency),
+            Amount::fromString($this->normalize($feeAmount), $currency),
+            Amount::fromString($this->normalize($totalAmount), $currency),
             CalculationDirection::FORWARD,
             $this->mergeComponentContext($request->getContext(), $context)
         );
@@ -134,11 +138,13 @@ abstract class AbstractFeeStrategy
         string $feeAmount,
         string $totalAmount,
         array $context = []
-    ): \SomeWork\FeeCalculator\Contracts\CalculationResult {
-        return new \SomeWork\FeeCalculator\Contracts\CalculationResult(
-            $this->normalize($baseAmount),
-            $this->normalize($feeAmount),
-            $this->normalize($totalAmount),
+    ): CalculationResult {
+        $currency = $request->getAmount()->getCurrency();
+
+        return new CalculationResult(
+            Amount::fromString($this->normalize($baseAmount), $currency),
+            Amount::fromString($this->normalize($feeAmount), $currency),
+            Amount::fromString($this->normalize($totalAmount), $currency),
             CalculationDirection::BACKWARD,
             $this->mergeComponentContext($request->getContext(), $context)
         );

@@ -9,6 +9,7 @@ use SomeWork\FeeCalculator\Contracts\CalculationRequest;
 use SomeWork\FeeCalculator\Contracts\CalculationResult;
 use SomeWork\FeeCalculator\Contracts\FeeStrategyInterface;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrategyInterface
 {
@@ -65,7 +66,7 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
 
         [$feeAmount, $totalAmount, $componentResults] = $this->runForward($request->getAmount(), $request->getContext());
 
-        return $this->createForwardResult($request, $request->getAmount(), $feeAmount, $totalAmount, [
+        return $this->createForwardResult($request, $request->getAmount()->getValue(), $feeAmount->getValue(), $totalAmount->getValue(), [
             'strategy' => $this->name,
             'component_results' => $componentResults,
         ]);
@@ -82,7 +83,7 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
 
         $resultRequest = $request->withAmount($baseAmount);
 
-        return $this->createBackwardResult($resultRequest, $baseAmount, $feeAmount, $totalAmount, [
+        return $this->createBackwardResult($resultRequest, $baseAmount->getValue(), $feeAmount->getValue(), $totalAmount->getValue(), [
             'strategy' => $this->name,
             'component_results' => $componentResults,
         ]);
@@ -90,10 +91,11 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
 
     /**
      * @param array<string, mixed> $requestContext
-     * @return array{0: string, 1: string, 2: array<string, array<string, mixed>>}
+     * @return array{0: \SomeWork\FeeCalculator\ValueObject\Amount, 1: \SomeWork\FeeCalculator\ValueObject\Amount, 2: array<string, array<string, mixed>>}
      */
-    private function runForward(string $baseAmount, array $requestContext): array
+    private function runForward(Amount $baseAmount, array $requestContext): array
     {
+        $currency = $baseAmount->getCurrency();
         $totalFee = '0';
         $componentResults = [];
 
@@ -101,40 +103,45 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
             $childContext = $this->resolveComponentContext($strategy->getName(), $requestContext);
             $childRequest = CalculationRequest::forward($strategy->getName(), $baseAmount, $childContext);
             $childResult = $strategy->calculateForward($childRequest);
-            $totalFee = $this->add($totalFee, $childResult->getFeeAmount());
+            $totalFee = $this->add($totalFee, $childResult->getFeeAmount()->getValue());
             $componentResults[$strategy->getName()] = [
-                'base_amount' => $childResult->getBaseAmount(),
-                'fee_amount' => $childResult->getFeeAmount(),
-                'total_amount' => $childResult->getTotalAmount(),
+                'base_amount' => $childResult->getBaseAmount()->getValue(),
+                'fee_amount' => $childResult->getFeeAmount()->getValue(),
+                'total_amount' => $childResult->getTotalAmount()->getValue(),
                 'context' => $childResult->getContext(),
             ];
         }
 
-        $totalAmount = $this->add($baseAmount, $totalFee);
+        $totalAmount = $this->add($baseAmount->getValue(), $totalFee);
 
-        return [$totalFee, $totalAmount, $componentResults];
+        return [
+            Amount::fromString($totalFee, $currency),
+            Amount::fromString($totalAmount, $currency),
+            $componentResults,
+        ];
     }
 
     /**
      * @param array<string, mixed> $requestContext
-     * @return array{0: string, 1: string, 2: string, 3: array<string, array<string, mixed>>}
+     * @return array{0: \SomeWork\FeeCalculator\ValueObject\Amount, 1: \SomeWork\FeeCalculator\ValueObject\Amount, 2: \SomeWork\FeeCalculator\ValueObject\Amount, 3: array<string, array<string, mixed>>}
      */
-    private function solveForBaseAmount(string $targetTotal, array $requestContext): array
+    private function solveForBaseAmount(Amount $targetTotal, array $requestContext): array
     {
-        [, $minimalTotal] = $this->runForward('0', $requestContext);
-        if ($this->compare($targetTotal, $minimalTotal) < 0) {
+        $currency = $targetTotal->getCurrency();
+        [, $minimalTotal] = $this->runForward(Amount::fromString('0', $currency), $requestContext);
+        if ($this->compare($targetTotal->getValue(), $minimalTotal->getValue()) < 0) {
             throw new InvalidArgumentException('Total amount is lower than the minimal possible composite total.');
         }
 
         $lower = '0';
-        $upper = $targetTotal;
+        $upper = $targetTotal->getValue();
         $bestBase = $lower;
-        $bestDifference = $this->absolute($this->subtract($targetTotal, $minimalTotal));
+        $bestDifference = $this->absolute($this->subtract($targetTotal->getValue(), $minimalTotal->getValue()));
 
         for ($iteration = 0; $iteration < $this->maxIterations; $iteration++) {
             $mid = $this->divide($this->add($lower, $upper), '2');
-            [$fee, $total, $components] = $this->runForward($mid, $requestContext);
-            $difference = $this->absolute($this->subtract($total, $targetTotal));
+            [$fee, $total, $components] = $this->runForward(Amount::fromString($mid, $currency), $requestContext);
+            $difference = $this->absolute($this->subtract($total->getValue(), $targetTotal->getValue()));
 
             if ($iteration === 0 || $this->compare($difference, $bestDifference) < 0) {
                 $bestDifference = $difference;
@@ -145,7 +152,7 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
                 break;
             }
 
-            if ($this->compare($total, $targetTotal) > 0) {
+            if ($this->compare($total->getValue(), $targetTotal->getValue()) > 0) {
                 $upper = $mid;
             } else {
                 $lower = $mid;
@@ -153,9 +160,14 @@ final class CompositeFeeStrategy extends AbstractFeeStrategy implements FeeStrat
         }
 
         $bestBase = $this->normalize(bcadd($bestBase, '0', $this->getScale()));
-        [$finalFee, $finalTotal, $finalComponents] = $this->runForward($bestBase, $requestContext);
+        [$finalFee, $finalTotal, $finalComponents] = $this->runForward(Amount::fromString($bestBase, $currency), $requestContext);
 
-        return [$bestBase, $finalFee, $finalTotal, $finalComponents];
+        return [
+            Amount::fromString($bestBase, $currency),
+            $finalFee,
+            $finalTotal,
+            $finalComponents,
+        ];
     }
 
     /**

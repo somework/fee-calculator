@@ -44,7 +44,7 @@ final class WiseTransferFeeStrategy extends AbstractFeeStrategy implements FeeSt
     public function calculateForward(CalculationRequest $request): CalculationResult
     {
         [$percentageRate, $fixedFee, $meta] = $this->resolveFees($request);
-        $baseAmount = $request->getAmount();
+        $baseAmount = $request->getAmount()->getValue();
         $percentageFee = $this->multiply($baseAmount, $percentageRate);
         $feeAmount = $this->add($percentageFee, $fixedFee);
         $totalAmount = $this->add($baseAmount, $feeAmount);
@@ -55,7 +55,7 @@ final class WiseTransferFeeStrategy extends AbstractFeeStrategy implements FeeSt
     public function calculateBackward(CalculationRequest $request): CalculationResult
     {
         [$percentageRate, $fixedFee, $meta] = $this->resolveFees($request);
-        $totalAmount = $request->getAmount();
+        $totalAmount = $request->getAmount()->getValue();
         $denominator = $this->add('1', $percentageRate);
         $adjustedTotal = $this->subtract($totalAmount, $fixedFee);
         $baseAmount = $this->divide($adjustedTotal, $denominator);

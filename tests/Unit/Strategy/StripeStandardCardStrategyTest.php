@@ -6,34 +6,87 @@ namespace SomeWork\FeeCalculator\Tests\Unit\Strategy;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Strategy\StripeStandardCardStrategy;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class StripeStandardCardStrategyTest extends TestCase
 {
-    public function testForwardCalculation(): void
+    /**
+     * @return iterable<string, list<array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string
+     * }>>
+     */
+    public static function provideCalculations(): iterable
     {
-        $strategy = new StripeStandardCardStrategy();
-        $request = CalculationRequest::forward($strategy->getName(), '100');
-
-        $result = $strategy->calculateForward($request);
-
-        self::assertSame('100', $result->getBaseAmount());
-        self::assertSame('3.2', $result->getFeeAmount());
-        self::assertSame('103.2', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::FORWARD, $result->getDirection());
+        yield 'typical amount' => [[
+            'baseInput' => '100',
+            'expectedForwardBase' => '100.00',
+            'expectedBackwardBase' => '100.00',
+            'expectedFee' => '3.20',
+            'expectedTotal' => '103.20',
+        ]];
+        yield 'zero amount corner case' => [[
+            'baseInput' => '0',
+            'expectedForwardBase' => '0.00',
+            'expectedBackwardBase' => '0.00',
+            'expectedFee' => '0.30',
+            'expectedTotal' => '0.30',
+        ]];
+        yield 'high precision amount' => [[
+            'baseInput' => '1234.56',
+            'expectedForwardBase' => '1234.56',
+            'expectedBackwardBase' => '1234.55',
+            'expectedFee' => '36.10',
+            'expectedTotal' => '1270.66',
+        ]];
     }
 
-    public function testBackwardCalculation(): void
+    /**
+     * @dataProvider provideCalculations
+     * @param array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string
+     * } $case
+     */
+    public function testBidirectionalCalculation(array $case): void
     {
+        [
+            'baseInput' => $baseInput,
+            'expectedForwardBase' => $expectedForwardBase,
+            'expectedBackwardBase' => $expectedBackwardBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+        ] = $case;
+
         $strategy = new StripeStandardCardStrategy();
-        $request = CalculationRequest::backward($strategy->getName(), '103.2');
+        $currency = new Currency('USD', 2);
 
-        $result = $strategy->calculateBackward($request);
+        $forwardRequest = CalculationRequest::forward($strategy->getName(), Amount::fromString($baseInput, $currency));
+        $forwardResult = $strategy->calculateForward($forwardRequest);
 
-        self::assertSame('100', $result->getBaseAmount());
-        self::assertSame('3.2', $result->getFeeAmount());
-        self::assertSame('103.2', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::BACKWARD, $result->getDirection());
+        self::assertSame($expectedForwardBase, $forwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $forwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $forwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::FORWARD, $forwardResult->getDirection());
+
+        $backwardRequest = CalculationRequest::backward(
+            $strategy->getName(),
+            Amount::fromString($expectedTotal, $currency)
+        );
+        $backwardResult = $strategy->calculateBackward($backwardRequest);
+
+        self::assertSame($expectedBackwardBase, $backwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $backwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $backwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::BACKWARD, $backwardResult->getDirection());
     }
 }

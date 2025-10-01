@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace SomeWork\FeeCalculator\Contracts;
 
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class CalculationResult
 {
-    private string $baseAmount;
+    private Amount $baseAmount;
 
-    private string $feeAmount;
+    private Amount $feeAmount;
 
-    private string $totalAmount;
+    private Amount $totalAmount;
 
     private CalculationDirection $direction;
 
@@ -23,9 +24,9 @@ final class CalculationResult
      * @param array<string, mixed> $context
      */
     public function __construct(
-        string $baseAmount,
-        string $feeAmount,
-        string $totalAmount,
+        Amount $baseAmount,
+        Amount $feeAmount,
+        Amount $totalAmount,
         CalculationDirection $direction,
         array $context = []
     ) {
@@ -36,17 +37,17 @@ final class CalculationResult
         $this->context = $context;
     }
 
-    public function getBaseAmount(): string
+    public function getBaseAmount(): Amount
     {
         return $this->baseAmount;
     }
 
-    public function getFeeAmount(): string
+    public function getFeeAmount(): Amount
     {
         return $this->feeAmount;
     }
 
-    public function getTotalAmount(): string
+    public function getTotalAmount(): Amount
     {
         return $this->totalAmount;
     }
@@ -64,7 +65,7 @@ final class CalculationResult
         return $this->context;
     }
 
-    public function withAmounts(string $baseAmount, string $feeAmount, string $totalAmount): self
+    public function withAmounts(Amount $baseAmount, Amount $feeAmount, Amount $totalAmount): self
     {
         return new self($baseAmount, $feeAmount, $totalAmount, $this->direction, $this->context);
     }

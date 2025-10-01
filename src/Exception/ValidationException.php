@@ -52,4 +52,14 @@ class ValidationException extends InvalidArgumentException
     {
         return new self(sprintf('Step #%d expects an output value from the previous step, but none is available.', $position));
     }
+
+    public static function mismatchedStepCurrency(int $position, string $expected, string $actual): self
+    {
+        return new self(sprintf(
+            'Step #%d expects currency "%s" but received "%s".',
+            $position,
+            $expected,
+            $actual
+        ));
+    }
 }

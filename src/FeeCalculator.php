@@ -10,12 +10,12 @@ use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Exception\UnsupportedCalculationDirectionException;
 use SomeWork\FeeCalculator\Exception\ValidationException;
 use SomeWork\FeeCalculator\Registry\StrategyRegistry;
+use SomeWork\FeeCalculator\ValueObject\Amount;
+use SomeWork\FeeCalculator\ValueObject\AmountNormalizer;
 
 final class FeeCalculator
 {
     private StrategyRegistry $registry;
-
-    private int $scale;
 
     public function __construct(StrategyRegistry $registry, int $scale = 2)
     {
@@ -24,7 +24,6 @@ final class FeeCalculator
         }
 
         $this->registry = $registry;
-        $this->scale = $scale;
     }
 
     public function calculate(CalculationRequest $request): CalculationResult
@@ -36,7 +35,7 @@ final class FeeCalculator
             throw UnsupportedCalculationDirectionException::forStrategy($strategy->getName(), $direction);
         }
 
-        $normalizedRequest = $request->withAmount($this->normalize($request->getAmount()));
+        $normalizedRequest = $request->withAmount($this->normalizeAmount($request->getAmount()));
 
         $result = match ($direction) {
             CalculationDirection::FORWARD => $strategy->calculateForward($normalizedRequest),
@@ -44,23 +43,21 @@ final class FeeCalculator
         };
 
         return $result->withAmounts(
-            $this->normalize($result->getBaseAmount()),
-            $this->normalize($result->getFeeAmount()),
-            $this->normalize($result->getTotalAmount())
+            $this->normalizeAmount($result->getBaseAmount()),
+            $this->normalizeAmount($result->getFeeAmount()),
+            $this->normalizeAmount($result->getTotalAmount())
         );
     }
 
-    public function normalizeAmount(string $value): string
+    public function normalizeAmount(Amount $amount): Amount
     {
-        return $this->normalize($value);
-    }
+        $currency = $amount->getCurrency();
+        $normalizedValue = AmountNormalizer::normalize($amount->getValue(), $currency->getPrecision());
 
-    private function normalize(string $value): string
-    {
-        if (!preg_match('/^-?\d+(?:\.\d+)?$/', $value)) {
-            throw ValidationException::invalidAmount($value);
+        if ($normalizedValue === $amount->getValue()) {
+            return $amount;
         }
 
-        return bcadd($value, '0', $this->scale);
+        return Amount::fromString($normalizedValue, $currency);
     }
 }

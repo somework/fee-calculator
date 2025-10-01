@@ -6,44 +6,137 @@ namespace SomeWork\FeeCalculator\Tests\Unit\Strategy;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\FeeCalculator\Contracts\CalculationRequest;
+use SomeWork\FeeCalculator\Currency\Currency;
 use SomeWork\FeeCalculator\Enum\CalculationDirection;
 use SomeWork\FeeCalculator\Strategy\AdyenInterchangePlusPlusStrategy;
+use SomeWork\FeeCalculator\ValueObject\Amount;
 
 final class AdyenInterchangePlusPlusStrategyTest extends TestCase
 {
-    /** @var array<string, string> */
-    private array $context = [
-        'interchange_percentage' => '0.0085',
-        'interchange_fixed' => '0.05',
-        'scheme_percentage' => '0.0012',
-        'scheme_fixed' => '0.02',
-        'markup_percentage' => '0.001',
-        'markup_fixed' => '0.12',
-    ];
-
-    public function testForwardCalculation(): void
+    /**
+     * @return iterable<string, list<array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     context: array<string, string>
+     * }>>
+     */
+    public static function provideCalculations(): iterable
     {
-        $strategy = new AdyenInterchangePlusPlusStrategy();
-        $request = CalculationRequest::forward($strategy->getName(), '100', $this->context);
+        yield 'full interchange components' => [[
+            'baseInput' => '100',
+            'expectedForwardBase' => '100.00',
+            'expectedBackwardBase' => '100.00',
+            'expectedFee' => '1.26',
+            'expectedTotal' => '101.26',
+            'context' => [
+                'interchange_percentage' => '0.0085',
+                'interchange_fixed' => '0.05',
+                'scheme_percentage' => '0.0012',
+                'scheme_fixed' => '0.02',
+                'markup_percentage' => '0.001',
+                'markup_fixed' => '0.12',
+            ],
+        ]];
 
-        $result = $strategy->calculateForward($request);
+        yield 'custom mix of components' => [[
+            'baseInput' => '200',
+            'expectedForwardBase' => '200.00',
+            'expectedBackwardBase' => '200.00',
+            'expectedFee' => '1.85',
+            'expectedTotal' => '201.85',
+            'context' => [
+                'interchange_percentage' => '0.005',
+                'scheme_percentage' => '0.002',
+                'markup_percentage' => '0.0015',
+                'interchange_fixed' => '0.10',
+                'scheme_fixed' => '0.02',
+                'markup_fixed' => '0.03',
+            ],
+        ]];
 
-        self::assertSame('100', $result->getBaseAmount());
-        self::assertSame('1.26', $result->getFeeAmount());
-        self::assertSame('101.26', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::FORWARD, $result->getDirection());
+        yield 'fractional base amount' => [[
+            'baseInput' => '12.34',
+            'expectedForwardBase' => '12.34',
+            'expectedBackwardBase' => '12.33',
+            'expectedFee' => '0.10',
+            'expectedTotal' => '12.44',
+            'context' => [
+                'interchange_percentage' => '0.0042',
+                'scheme_percentage' => '0.0013',
+                'markup_percentage' => '0.0005',
+                'interchange_fixed' => '0.02',
+                'scheme_fixed' => '0',
+                'markup_fixed' => '0.015',
+            ],
+        ]];
+
+        yield 'zero base corner case' => [[
+            'baseInput' => '0',
+            'expectedForwardBase' => '0.00',
+            'expectedBackwardBase' => '0.00',
+            'expectedFee' => '0.19',
+            'expectedTotal' => '0.19',
+            'context' => [
+                'interchange_percentage' => '0.0085',
+                'interchange_fixed' => '0.05',
+                'scheme_percentage' => '0.0012',
+                'scheme_fixed' => '0.02',
+                'markup_percentage' => '0.001',
+                'markup_fixed' => '0.12',
+            ],
+        ]];
     }
 
-    public function testBackwardCalculation(): void
+    /**
+     * @dataProvider provideCalculations
+     * @param array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     context: array<string, string>
+     * } $case
+     */
+    public function testBidirectionalCalculation(array $case): void
     {
+        [
+            'baseInput' => $baseInput,
+            'expectedForwardBase' => $expectedForwardBase,
+            'expectedBackwardBase' => $expectedBackwardBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+            'context' => $context,
+        ] = $case;
+
         $strategy = new AdyenInterchangePlusPlusStrategy();
-        $request = CalculationRequest::backward($strategy->getName(), '101.26', $this->context);
+        $currency = new Currency('USD', 2);
 
-        $result = $strategy->calculateBackward($request);
+        $forwardRequest = CalculationRequest::forward(
+            $strategy->getName(),
+            Amount::fromString($baseInput, $currency),
+            $context
+        );
+        $forwardResult = $strategy->calculateForward($forwardRequest);
 
-        self::assertSame('100', $result->getBaseAmount());
-        self::assertSame('1.26', $result->getFeeAmount());
-        self::assertSame('101.26', $result->getTotalAmount());
-        self::assertSame(CalculationDirection::BACKWARD, $result->getDirection());
+        self::assertSame($expectedForwardBase, $forwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $forwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $forwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::FORWARD, $forwardResult->getDirection());
+
+        $backwardRequest = CalculationRequest::backward(
+            $strategy->getName(),
+            Amount::fromString($expectedTotal, $currency),
+            $context
+        );
+        $backwardResult = $strategy->calculateBackward($backwardRequest);
+
+        self::assertSame($expectedBackwardBase, $backwardResult->getBaseAmount()->getValue());
+        self::assertSame($expectedFee, $backwardResult->getFeeAmount()->getValue());
+        self::assertSame($expectedTotal, $backwardResult->getTotalAmount()->getValue());
+        self::assertSame(CalculationDirection::BACKWARD, $backwardResult->getDirection());
     }
 }
