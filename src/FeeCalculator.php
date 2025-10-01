@@ -17,8 +17,6 @@ final class FeeCalculator
 {
     private StrategyRegistry $registry;
 
-    private int $legacyScale;
-
     public function __construct(StrategyRegistry $registry, int $scale = 2)
     {
         if ($scale < 0) {
@@ -26,16 +24,6 @@ final class FeeCalculator
         }
 
         $this->registry = $registry;
-        $this->legacyScale = $scale;
-    }
-
-    /**
-     * @deprecated Amount normalization now relies on currency precision; this helper exists for callers
-     *             that still inspect the legacy constructor argument during migration.
-     */
-    public function getLegacyScale(): int
-    {
-        return $this->legacyScale;
     }
 
     public function calculate(CalculationRequest $request): CalculationResult
