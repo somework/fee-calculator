@@ -14,31 +14,59 @@ use SomeWork\FeeCalculator\ValueObject\Amount;
 final class StripeStandardCardStrategyTest extends TestCase
 {
     /**
-     * @return iterable<string, array{
+     * @return iterable<string, list<array{
      *     baseInput: string,
      *     expectedForwardBase: string,
      *     expectedBackwardBase: string,
      *     expectedFee: string,
      *     expectedTotal: string
-     * }>
+     * }>>
      */
     public static function provideCalculations(): iterable
     {
-        yield 'typical amount' => ['100', '100.00', '100.00', '3.20', '103.20'];
-        yield 'zero amount corner case' => ['0', '0.00', '0.00', '0.30', '0.30'];
-        yield 'high precision amount' => ['1234.56', '1234.56', '1234.55', '36.10', '1270.66'];
+        yield 'typical amount' => [[
+            'baseInput' => '100',
+            'expectedForwardBase' => '100.00',
+            'expectedBackwardBase' => '100.00',
+            'expectedFee' => '3.20',
+            'expectedTotal' => '103.20',
+        ]];
+        yield 'zero amount corner case' => [[
+            'baseInput' => '0',
+            'expectedForwardBase' => '0.00',
+            'expectedBackwardBase' => '0.00',
+            'expectedFee' => '0.30',
+            'expectedTotal' => '0.30',
+        ]];
+        yield 'high precision amount' => [[
+            'baseInput' => '1234.56',
+            'expectedForwardBase' => '1234.56',
+            'expectedBackwardBase' => '1234.55',
+            'expectedFee' => '36.10',
+            'expectedTotal' => '1270.66',
+        ]];
     }
 
     /**
      * @dataProvider provideCalculations
+     * @param array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string
+     * } $case
      */
-    public function testBidirectionalCalculation(
-        string $baseInput,
-        string $expectedForwardBase,
-        string $expectedBackwardBase,
-        string $expectedFee,
-        string $expectedTotal
-    ): void {
+    public function testBidirectionalCalculation(array $case): void
+    {
+        [
+            'baseInput' => $baseInput,
+            'expectedForwardBase' => $expectedForwardBase,
+            'expectedBackwardBase' => $expectedBackwardBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+        ] = $case;
+
         $strategy = new StripeStandardCardStrategy();
         $currency = new Currency('USD', 2);
 

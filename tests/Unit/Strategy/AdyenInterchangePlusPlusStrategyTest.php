@@ -14,24 +14,24 @@ use SomeWork\FeeCalculator\ValueObject\Amount;
 final class AdyenInterchangePlusPlusStrategyTest extends TestCase
 {
     /**
-     * @return iterable<string, array{
+     * @return iterable<string, list<array{
      *     baseInput: string,
      *     expectedForwardBase: string,
      *     expectedBackwardBase: string,
      *     expectedFee: string,
      *     expectedTotal: string,
      *     context: array<string, string>
-     * }>
+     * }>>
      */
     public static function provideCalculations(): iterable
     {
-        yield 'full interchange components' => [
-            '100',
-            '100.00',
-            '100.00',
-            '1.26',
-            '101.26',
-            [
+        yield 'full interchange components' => [[
+            'baseInput' => '100',
+            'expectedForwardBase' => '100.00',
+            'expectedBackwardBase' => '100.00',
+            'expectedFee' => '1.26',
+            'expectedTotal' => '101.26',
+            'context' => [
                 'interchange_percentage' => '0.0085',
                 'interchange_fixed' => '0.05',
                 'scheme_percentage' => '0.0012',
@@ -39,15 +39,15 @@ final class AdyenInterchangePlusPlusStrategyTest extends TestCase
                 'markup_percentage' => '0.001',
                 'markup_fixed' => '0.12',
             ],
-        ];
+        ]];
 
-        yield 'custom mix of components' => [
-            '200',
-            '200.00',
-            '200.00',
-            '1.85',
-            '201.85',
-            [
+        yield 'custom mix of components' => [[
+            'baseInput' => '200',
+            'expectedForwardBase' => '200.00',
+            'expectedBackwardBase' => '200.00',
+            'expectedFee' => '1.85',
+            'expectedTotal' => '201.85',
+            'context' => [
                 'interchange_percentage' => '0.005',
                 'scheme_percentage' => '0.002',
                 'markup_percentage' => '0.0015',
@@ -55,15 +55,15 @@ final class AdyenInterchangePlusPlusStrategyTest extends TestCase
                 'scheme_fixed' => '0.02',
                 'markup_fixed' => '0.03',
             ],
-        ];
+        ]];
 
-        yield 'fractional base amount' => [
-            '12.34',
-            '12.34',
-            '12.33',
-            '0.10',
-            '12.44',
-            [
+        yield 'fractional base amount' => [[
+            'baseInput' => '12.34',
+            'expectedForwardBase' => '12.34',
+            'expectedBackwardBase' => '12.33',
+            'expectedFee' => '0.10',
+            'expectedTotal' => '12.44',
+            'context' => [
                 'interchange_percentage' => '0.0042',
                 'scheme_percentage' => '0.0013',
                 'markup_percentage' => '0.0005',
@@ -71,15 +71,15 @@ final class AdyenInterchangePlusPlusStrategyTest extends TestCase
                 'scheme_fixed' => '0',
                 'markup_fixed' => '0.015',
             ],
-        ];
+        ]];
 
-        yield 'zero base corner case' => [
-            '0',
-            '0.00',
-            '0.00',
-            '0.19',
-            '0.19',
-            [
+        yield 'zero base corner case' => [[
+            'baseInput' => '0',
+            'expectedForwardBase' => '0.00',
+            'expectedBackwardBase' => '0.00',
+            'expectedFee' => '0.19',
+            'expectedTotal' => '0.19',
+            'context' => [
                 'interchange_percentage' => '0.0085',
                 'interchange_fixed' => '0.05',
                 'scheme_percentage' => '0.0012',
@@ -87,21 +87,31 @@ final class AdyenInterchangePlusPlusStrategyTest extends TestCase
                 'markup_percentage' => '0.001',
                 'markup_fixed' => '0.12',
             ],
-        ];
+        ]];
     }
 
     /**
      * @dataProvider provideCalculations
-     * @param array<string, string> $context
+     * @param array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     context: array<string, string>
+     * } $case
      */
-    public function testBidirectionalCalculation(
-        string $baseInput,
-        string $expectedForwardBase,
-        string $expectedBackwardBase,
-        string $expectedFee,
-        string $expectedTotal,
-        array $context
-    ): void {
+    public function testBidirectionalCalculation(array $case): void
+    {
+        [
+            'baseInput' => $baseInput,
+            'expectedForwardBase' => $expectedForwardBase,
+            'expectedBackwardBase' => $expectedBackwardBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+            'context' => $context,
+        ] = $case;
+
         $strategy = new AdyenInterchangePlusPlusStrategy();
         $currency = new Currency('USD', 2);
 

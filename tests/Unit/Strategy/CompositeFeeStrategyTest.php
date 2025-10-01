@@ -17,61 +17,70 @@ use SomeWork\FeeCalculator\ValueObject\Amount;
 final class CompositeFeeStrategyTest extends TestCase
 {
     /**
-     * @return iterable<string, array{
+     * @return iterable<string, list<array{
      *     baseInput: string,
      *     expectedBase: string,
      *     expectedFee: string,
      *     expectedTotal: string,
      *     expectedComponents: array<string, array{base: string, fee: string, total: string}>
-     * }>
+     * }>>
      */
     public static function provideCalculations(): iterable
     {
-        yield 'typical amount' => [
-            '100',
-            '100.00',
-            '4.70',
-            '104.70',
-            [
+        yield 'typical amount' => [[
+            'baseInput' => '100',
+            'expectedBase' => '100.00',
+            'expectedFee' => '4.70',
+            'expectedTotal' => '104.70',
+            'expectedComponents' => [
                 'stripe.standard_card' => ['base' => '100.00', 'fee' => '3.20', 'total' => '103.20'],
                 'stripe.international_surcharge' => ['base' => '100.00', 'fee' => '1.50', 'total' => '101.50'],
             ],
-        ];
+        ]];
 
-        yield 'zero amount corner case' => [
-            '0',
-            '0.00',
-            '0.30',
-            '0.30',
-            [
+        yield 'zero amount corner case' => [[
+            'baseInput' => '0',
+            'expectedBase' => '0.00',
+            'expectedFee' => '0.30',
+            'expectedTotal' => '0.30',
+            'expectedComponents' => [
                 'stripe.standard_card' => ['base' => '0.00', 'fee' => '0.30', 'total' => '0.30'],
                 'stripe.international_surcharge' => ['base' => '0.00', 'fee' => '0.00', 'total' => '0.00'],
             ],
-        ];
+        ]];
 
-        yield 'fractional amount' => [
-            '12.34',
-            '12.34',
-            '0.83',
-            '13.17',
-            [
+        yield 'fractional amount' => [[
+            'baseInput' => '12.34',
+            'expectedBase' => '12.34',
+            'expectedFee' => '0.83',
+            'expectedTotal' => '13.17',
+            'expectedComponents' => [
                 'stripe.standard_card' => ['base' => '12.34', 'fee' => '0.65', 'total' => '12.99'],
                 'stripe.international_surcharge' => ['base' => '12.34', 'fee' => '0.18', 'total' => '12.52'],
             ],
-        ];
+        ]];
     }
 
     /**
      * @dataProvider provideCalculations
-     * @param array<string, array{base: string, fee: string, total: string}> $expectedComponents
+     * @param array{
+     *     baseInput: string,
+     *     expectedBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     expectedComponents: array<string, array{base: string, fee: string, total: string}>
+     * } $case
      */
-    public function testBidirectionalCalculation(
-        string $baseInput,
-        string $expectedBase,
-        string $expectedFee,
-        string $expectedTotal,
-        array $expectedComponents
-    ): void {
+    public function testBidirectionalCalculation(array $case): void
+    {
+        [
+            'baseInput' => $baseInput,
+            'expectedBase' => $expectedBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+            'expectedComponents' => $expectedComponents,
+        ] = $case;
+
         $strategy = new CompositeFeeStrategy([
             new StripeStandardCardStrategy(),
             new StripeInternationalSurchargeStrategy(),

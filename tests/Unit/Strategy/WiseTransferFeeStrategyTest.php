@@ -14,62 +14,86 @@ use SomeWork\FeeCalculator\ValueObject\Amount;
 final class WiseTransferFeeStrategyTest extends TestCase
 {
     /**
-     * @return iterable<string, array{
+     * @return iterable<string, list<array{
      *     baseInput: string,
      *     expectedForwardBase: string,
      *     expectedBackwardBase: string,
      *     expectedFee: string,
      *     expectedTotal: string,
      *     context: array<string, string>
-     * }>
+     * }>>
      */
     public static function provideCalculations(): iterable
     {
-        yield 'customised fees' => [
-            '200',
-            '200.00',
-            '200.00',
-            '2.10',
-            '202.10',
-            [
+        yield 'customised fees' => [[
+            'baseInput' => '200',
+            'expectedForwardBase' => '200.00',
+            'expectedBackwardBase' => '200.00',
+            'expectedFee' => '2.10',
+            'expectedTotal' => '202.10',
+            'context' => [
                 'variable_percentage' => '0.008',
                 'fixed_fee' => '0.25',
                 'additional_percentage' => '0.001',
                 'additional_fixed_fee' => '0.05',
             ],
-        ];
+        ]];
 
-        yield 'defaults only' => ['50', '50.00', '49.99', '0.63', '50.63', []];
+        yield 'defaults only' => [[
+            'baseInput' => '50',
+            'expectedForwardBase' => '50.00',
+            'expectedBackwardBase' => '49.99',
+            'expectedFee' => '0.63',
+            'expectedTotal' => '50.63',
+            'context' => [],
+        ]];
 
-        yield 'mixed adjustments' => [
-            '12.34',
-            '12.34',
-            '12.33',
-            '0.37',
-            '12.71',
-            [
+        yield 'mixed adjustments' => [[
+            'baseInput' => '12.34',
+            'expectedForwardBase' => '12.34',
+            'expectedBackwardBase' => '12.33',
+            'expectedFee' => '0.37',
+            'expectedTotal' => '12.71',
+            'context' => [
                 'variable_percentage' => '0.0075',
                 'additional_percentage' => '0.0025',
                 'fixed_fee' => '0.20',
                 'additional_fixed_fee' => '0.05',
             ],
-        ];
+        ]];
 
-        yield 'zero base corner case' => ['0', '0.00', '0.00', '0.31', '0.31', []];
+        yield 'zero base corner case' => [[
+            'baseInput' => '0',
+            'expectedForwardBase' => '0.00',
+            'expectedBackwardBase' => '0.00',
+            'expectedFee' => '0.31',
+            'expectedTotal' => '0.31',
+            'context' => [],
+        ]];
     }
 
     /**
      * @dataProvider provideCalculations
-     * @param array<string, string> $context
+     * @param array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     context: array<string, string>
+     * } $case
      */
-    public function testBidirectionalCalculation(
-        string $baseInput,
-        string $expectedForwardBase,
-        string $expectedBackwardBase,
-        string $expectedFee,
-        string $expectedTotal,
-        array $context
-    ): void {
+    public function testBidirectionalCalculation(array $case): void
+    {
+        [
+            'baseInput' => $baseInput,
+            'expectedForwardBase' => $expectedForwardBase,
+            'expectedBackwardBase' => $expectedBackwardBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+            'context' => $context,
+        ] = $case;
+
         $strategy = new WiseTransferFeeStrategy();
         $currency = new Currency('USD', 2);
 

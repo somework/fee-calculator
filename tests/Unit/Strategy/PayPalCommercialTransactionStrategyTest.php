@@ -14,61 +14,85 @@ use SomeWork\FeeCalculator\ValueObject\Amount;
 final class PayPalCommercialTransactionStrategyTest extends TestCase
 {
     /**
-     * @return iterable<string, array{
+     * @return iterable<string, list<array{
      *     baseInput: string,
      *     expectedForwardBase: string,
      *     expectedBackwardBase: string,
      *     expectedFee: string,
      *     expectedTotal: string,
      *     context: array<string, mixed>
-     * }>
+     * }>>
      */
     public static function provideCalculations(): iterable
     {
-        yield 'typical adjustments' => [
-            '100',
-            '100.00',
-            '100.00',
-            '6.58',
-            '106.58',
-            [
+        yield 'typical adjustments' => [[
+            'baseInput' => '100',
+            'expectedForwardBase' => '100.00',
+            'expectedBackwardBase' => '100.00',
+            'expectedFee' => '6.58',
+            'expectedTotal' => '106.58',
+            'context' => [
                 'cross_border' => true,
                 'additional_percentage' => '0.01',
                 'additional_fixed_fee' => '0.10',
             ],
-        ];
+        ]];
 
-        yield 'no adjustments' => ['50', '50.00', '49.99', '2.23', '52.23', []];
+        yield 'no adjustments' => [[
+            'baseInput' => '50',
+            'expectedForwardBase' => '50.00',
+            'expectedBackwardBase' => '49.99',
+            'expectedFee' => '2.23',
+            'expectedTotal' => '52.23',
+            'context' => [],
+        ]];
 
-        yield 'zero base corner case' => ['0', '0.00', '0.00', '0.49', '0.49', []];
+        yield 'zero base corner case' => [[
+            'baseInput' => '0',
+            'expectedForwardBase' => '0.00',
+            'expectedBackwardBase' => '0.00',
+            'expectedFee' => '0.49',
+            'expectedTotal' => '0.49',
+            'context' => [],
+        ]];
 
-        yield 'currency conversion adjustments' => [
-            '23.45',
-            '23.45',
-            '23.44',
-            '2.29',
-            '25.74',
-            [
+        yield 'currency conversion adjustments' => [[
+            'baseInput' => '23.45',
+            'expectedForwardBase' => '23.45',
+            'expectedBackwardBase' => '23.44',
+            'expectedFee' => '2.29',
+            'expectedTotal' => '25.74',
+            'context' => [
                 'cross_border' => true,
                 'currency_conversion_percentage' => '0.02',
                 'additional_percentage' => '0.005',
                 'additional_fixed_fee' => '0.05',
             ],
-        ];
+        ]];
     }
 
     /**
      * @dataProvider provideCalculations
-     * @param array<string, mixed> $context
+     * @param array{
+     *     baseInput: string,
+     *     expectedForwardBase: string,
+     *     expectedBackwardBase: string,
+     *     expectedFee: string,
+     *     expectedTotal: string,
+     *     context: array<string, mixed>
+     * } $case
      */
-    public function testBidirectionalCalculation(
-        string $baseInput,
-        string $expectedForwardBase,
-        string $expectedBackwardBase,
-        string $expectedFee,
-        string $expectedTotal,
-        array $context
-    ): void {
+    public function testBidirectionalCalculation(array $case): void
+    {
+        [
+            'baseInput' => $baseInput,
+            'expectedForwardBase' => $expectedForwardBase,
+            'expectedBackwardBase' => $expectedBackwardBase,
+            'expectedFee' => $expectedFee,
+            'expectedTotal' => $expectedTotal,
+            'context' => $context,
+        ] = $case;
+
         $strategy = new PayPalCommercialTransactionStrategy();
         $currency = new Currency('USD', 2);
 

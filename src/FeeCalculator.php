@@ -29,6 +29,15 @@ final class FeeCalculator
         $this->legacyScale = $scale;
     }
 
+    /**
+     * @deprecated Amount normalization now relies on currency precision; this helper exists for callers
+     *             that still inspect the legacy constructor argument during migration.
+     */
+    public function getLegacyScale(): int
+    {
+        return $this->legacyScale;
+    }
+
     public function calculate(CalculationRequest $request): CalculationResult
     {
         $strategy = $this->registry->get($request->getStrategyName());
