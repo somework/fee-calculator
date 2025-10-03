@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\ValueObject;
+namespace SomeWork\FeeCalculator\Helpers;
 
 use InvalidArgumentException;
 
@@ -73,6 +73,6 @@ final class AmountNormalizer
         $decimalPart = substr($value, $decimalPosition + 1);
         $trimmedDecimalPart = rtrim($decimalPart, '0');
 
-        return $trimmedDecimalPart === '' ? 0 : strlen($trimmedDecimalPart);
+        return '' === $trimmedDecimalPart ? 0 : strlen($trimmedDecimalPart);
     }
 }

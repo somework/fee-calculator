@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\Tests\Unit\ValueObject;
+namespace SomeWork\FeeCalculatorTests\Unit\DTO;
 
 use PHPUnit\Framework\TestCase;
-use SomeWork\FeeCalculator\Currency\Currency;
-use SomeWork\FeeCalculator\ValueObject\Amount;
+use SomeWork\FeeCalculator\DTO\Amount;
+use SomeWork\FeeCalculator\DTO\Currency;
 
 final class AmountTest extends TestCase
 {
@@ -21,24 +21,24 @@ final class AmountTest extends TestCase
 
     public function testItNormalizesValue(): void
     {
-        $amount = new Amount($this->currency, '1');
+        $amount = new Amount('1', $this->currency);
 
         self::assertSame('1.00', $amount->getValue());
     }
 
     public function testItHandlesValuesWithAdditionalZeros(): void
     {
-        $amount = new Amount($this->currency, '00.000010000');
+        $amount = new Amount('00.000010000', $this->currency);
 
         self::assertSame('0.00', $amount->getValue());
     }
 
     public function testEqualityRequiresSameCurrencyAndValue(): void
     {
-        $amount = new Amount($this->currency, '1.00');
-        $same = new Amount($this->currency, '1.000');
-        $differentCurrency = new Amount(new Currency('EUR', 2), '1.00');
-        $differentValue = new Amount($this->currency, '2.00');
+        $amount = new Amount('1.00', $this->currency);
+        $same = new Amount('1.000', $this->currency);
+        $differentCurrency = new Amount('1.00', new Currency('EUR', 2));
+        $differentValue = new Amount('2.00', $this->currency);
 
         self::assertTrue($amount->equals($same));
         self::assertFalse($amount->equals($differentCurrency));

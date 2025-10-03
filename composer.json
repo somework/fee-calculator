@@ -18,6 +18,11 @@
             "SomeWork\\FeeCalculator\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "SomeWork\\FeeCalculatorTests\\": "tests/"
+        }
+    },
     "require-dev": {
         "phpunit/phpunit": "^10.5",
         "phpstan/phpstan": "^1.10",
@@ -42,7 +47,8 @@
         ],
         "phpstan": "vendor/bin/phpstan analyse --configuration=phpstan.neon.dist",
         "phpstan-deprecation": "vendor/bin/phpstan analyse --configuration=phpstan-deprecation.neon",
-        "cs": "vendor/bin/phpcs --standard=PSR12 --warning-severity=0 src",
+        "cs": "vendor/bin/phpcs --standard=PSR12 --warning-severity=0 src tests",
+        "cbf": "vendor/bin/phpcbf --standard=PSR12 src tests",
         "mutation": "@php -r \"if (!extension_loaded('xdebug') && !extension_loaded('pcov') && PHP_SAPI !== 'phpdbg') { fwrite(STDERR, 'Mutation testing skipped: no coverage driver available.' . PHP_EOL); exit(0); } passthru('vendor/bin/infection --threads=max --min-msi=85 --min-covered-msi=85 --ansi', $status); exit($status);\""
     },
     "config": {

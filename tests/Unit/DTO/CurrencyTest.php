@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\Tests\Unit\Currency;
+namespace SomeWork\FeeCalculatorTests\Unit\DTO;
 
 use PHPUnit\Framework\TestCase;
-use SomeWork\FeeCalculator\Currency\Currency;
+use SomeWork\FeeCalculator\DTO\Currency;
 
 final class CurrencyTest extends TestCase
 {
@@ -13,7 +13,7 @@ final class CurrencyTest extends TestCase
     {
         $currency = new Currency('usd', 2);
 
-        self::assertSame('USD', $currency->getCode());
+        self::assertSame('usd', $currency->getIdentifier());
         self::assertSame(2, $currency->getPrecision());
     }
 }

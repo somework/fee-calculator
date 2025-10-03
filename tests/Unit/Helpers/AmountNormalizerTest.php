@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\Tests\Unit\ValueObject;
+namespace SomeWork\FeeCalculatorTests\Unit\Helpers;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use SomeWork\FeeCalculator\ValueObject\AmountNormalizer;
+use SomeWork\FeeCalculator\Helpers\AmountNormalizer;
 
 final class AmountNormalizerTest extends TestCase
 {
