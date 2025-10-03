@@ -44,62 +44,9 @@ Card schemes publish assessment and cross-border fees that flow into acquirer pr
 
 [5]: https://usa.visa.com/dam/VCOM/download/merchants/visa-merchant-data-standards-manual.pdf
 
-## Strategy Implementations
+## Implementation Status
 
-The following strategies implement `FeeStrategyInterface` with BC Math arithmetic:
-
-- `StripeStandardCardStrategy` – domestic flat + percentage fee. Backward uses `B = (T - f) ÷ (1 + r)` to solve net amount.
-- `StripeInternationalSurchargeStrategy` – percentage-only surcharge stacked onto domestic pricing.
-- `PayPalCommercialTransactionStrategy` – allows context-driven surcharges for cross-border, currency conversion, and additional flat fees.
-- `AdyenInterchangePlusPlusStrategy` – aggregates interchange, scheme, and markup components supplied in context.
-- `WiseTransferFeeStrategy` – models Wise’s variable + fixed corridor pricing with optional adjustments.
-- `CompositeFeeStrategy` – orchestrates multiple strategies deterministically, using binary search for backward calculations when layered fees are present.
-
-## Configuration Examples
-
-### Standalone Strategies
-
-```php
-use SomeWork\FeeCalculator\Strategy\StripeStandardCardStrategy;
-use SomeWork\FeeCalculator\Strategy\StripeInternationalSurchargeStrategy;
-
-$stripeStandard = new StripeStandardCardStrategy();
-$stripeInternational = new StripeInternationalSurchargeStrategy(
-    'stripe.intl_eu_surcharge',
-    '0.02' // 2% surcharge for a specific market
-);
-```
-
-### Composite Strategy with Guardrails
-
-```php
-use SomeWork\FeeCalculator\Contracts\CalculationRequest;
-use SomeWork\FeeCalculator\Strategy\CompositeFeeStrategy;
-use SomeWork\FeeCalculator\Strategy\StripeStandardCardStrategy;
-use SomeWork\FeeCalculator\Strategy\StripeInternationalSurchargeStrategy;
-use SomeWork\FeeCalculator\Currency\Currency;
-use SomeWork\FeeCalculator\ValueObject\Amount;
-
-$composite = new CompositeFeeStrategy([
-    new StripeStandardCardStrategy(),
-    new StripeInternationalSurchargeStrategy(),
-], 'stripe.full_stack');
-
-$currency = new Currency('USD', 2);
-$request = CalculationRequest::forward('stripe.full_stack', Amount::fromString('100.00', $currency));
-$result = $composite->calculateForward($request);
-```
-
-**Guardrails and precedence rules:**
-
-1. Order matters—strategies are evaluated sequentially in the array supplied to `CompositeFeeStrategy`; each strategy receives the original base amount, and composite totals sum all child fees.
-2. Each child strategy **must** support the requested direction; otherwise `UnsupportedCalculationDirectionException` is thrown.
-3. Backward calculations validate the requested total against the minimal achievable total (sum of fixed fees at zero base). If the total is too low, an `InvalidArgumentException` is raised.
-4. Component-specific context should be nested under `['components' => ['strategy.name' => [...]]]`. A shared context block (`['shared' => [...]]`) can distribute common metadata to every child.
-5. Precision defaults to scale `8`; adjust the constructor argument for finer tolerance when solving backward totals.
-
-These patterns enable layered fee modelling for realistic processor setups while maintaining explicit control over directionality and context injection.
-
+The codebase currently ships without pre-built fee strategies. Use the research above as guidance when introducing new implementations tailored to your use cases.
 
 [1]: https://stripe.com/pricing
 [2]: https://www.paypal.com/us/webapps/mpp/merchant-fees
