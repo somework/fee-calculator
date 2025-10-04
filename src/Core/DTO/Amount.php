@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\DTO;
+namespace SomeWork\MonetaryCalculator\Core\DTO;
 
-use SomeWork\FeeCalculator\Contracts\DTO\AmountInterface;
-use SomeWork\FeeCalculator\Contracts\DTO\CurrencyInterface;
-use SomeWork\FeeCalculator\Helpers\AmountNormalizer;
+use SomeWork\MonetaryCalculator\Core\Contracts\DTO\AmountInterface;
+use SomeWork\MonetaryCalculator\Core\Contracts\DTO\CurrencyInterface;
+use SomeWork\MonetaryCalculator\Helpers\AmountNormalizer;
 
 class Amount implements AmountInterface
 {
@@ -14,7 +14,7 @@ class Amount implements AmountInterface
         protected string $value,
         protected CurrencyInterface $currency
     ) {
-        $this->value = AmountNormalizer::normalize($value, $currency->getPrecision());
+        $this->value = AmountNormalizer::normalize($value, $currency->getScale());
     }
 
     public function getValue(): string
@@ -36,7 +36,7 @@ class Amount implements AmountInterface
         return 0 === bccomp(
             $this->getValue(),
             $amount->getValue(),
-            $this->getCurrency()->getPrecision(),
+            $this->getCurrency()->getScale(),
         );
     }
 }

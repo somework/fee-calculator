@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\Enum;
+namespace SomeWork\MonetaryCalculator\Enum;
 
 enum CalculationDirection: string
 {

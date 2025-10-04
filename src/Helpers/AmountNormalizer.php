@@ -2,12 +2,32 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculator\Helpers;
+namespace SomeWork\MonetaryCalculator\Helpers;
 
-use InvalidArgumentException;
+use SomeWork\MonetaryCalculator\Exception\Helper\LosePrecisionException;
+use SomeWork\MonetaryCalculator\Exception\Helper\NotDecimalStringException;
+use SomeWork\MonetaryCalculator\Core\Exception\InvalidScaleException;
 
+/**
+ * Utility class for normalizing monetary amounts with precise decimal handling.
+ *
+ * This class provides methods to normalize string representations of monetary values
+ * to a specific decimal scale, ensuring consistent precision for financial calculations.
+ */
 final class AmountNormalizer
 {
+    private const DECIMAL_PATTERN = '/^-?(?:\d+)(?:\.\d+)?$/';
+    private const DECIMAL_SEPARATOR = '.';
+    private const PRECISION_COMPARISON_SCALE = 10;
+    /**
+     * Normalizes a monetary value to the specified decimal scale.
+     *
+     * @param string $value The monetary value as a string (e.g., "123.456")
+     * @param int $scale The target decimal scale (e.g., 2 for cents)
+     * @return string The normalized value with proper decimal places
+     * @throws NotDecimalStringException If the value is not a valid decimal number
+     * @throws InvalidScaleException If the scale is negative
+     */
     public static function normalize(string $value, int $scale): string
     {
         $numeric = self::sanitizeNumeric($value);
@@ -15,6 +35,15 @@ final class AmountNormalizer
         return self::formatScale($numeric, $scale);
     }
 
+    /**
+     * Validates that a value can be represented at the specified scale without precision loss.
+     *
+     * @param string $value The monetary value as a string
+     * @param int $scale The target decimal scale
+     * @throws NotDecimalStringException If the value is not a valid decimal number
+     * @throws InvalidScaleException If the scale is negative
+     * @throws LosePrecisionException If the value cannot be represented at the scale without loss
+     */
     public static function enforceScale(string $value, int $scale): void
     {
         $numeric = self::sanitizeNumeric($value);
@@ -23,19 +52,15 @@ final class AmountNormalizer
 
         $comparisonScale = max($scale, self::countDecimals($numeric));
 
-        if (bccomp($normalized, $numeric, $comparisonScale) !== 0) {
-            throw new InvalidArgumentException(sprintf(
-                'Value "%s" cannot be represented with scale of %d decimal places without losing precision.',
-                $value,
-                $scale,
-            ));
+        if (0 !== bccomp($normalized, $numeric, $comparisonScale)) {
+            throw new LosePrecisionException($numeric, $comparisonScale);
         }
     }
 
     private static function assertNumeric(string $value): void
     {
-        if (preg_match('/^-?(?:\d+)(?:\.\d+)?$/', $value) !== 1) {
-            throw new InvalidArgumentException(sprintf('Value "%s" is not a valid decimal string.', $value));
+        if (preg_match(self::DECIMAL_PATTERN, $value) !== 1) {
+            throw new NotDecimalStringException($value);
         }
     }
 
@@ -56,7 +81,7 @@ final class AmountNormalizer
     private static function formatScale(string $value, int $scale): string
     {
         if ($scale < 0) {
-            throw new InvalidArgumentException('Scale must be a positive integer.');
+            throw new InvalidScaleException($scale);
         }
 
         return bcadd($value, '0', $scale);
@@ -64,7 +89,7 @@ final class AmountNormalizer
 
     private static function countDecimals(string $value): int
     {
-        $decimalPosition = strpos($value, '.');
+        $decimalPosition = strpos($value, self::DECIMAL_SEPARATOR);
 
         if ($decimalPosition === false) {
             return 0;

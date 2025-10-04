@@ -1,7 +1,7 @@
 {
-    "name": "somework/fee-calculator",
+    "name": "somework/monetary-calculator",
     "type": "library",
-    "description": "Utilities for calculating various fees",
+    "description": "A comprehensive monetary calculation library for fees, operations, and financial computations",
     "license": "MIT",
     "authors": [
         {
@@ -15,12 +15,12 @@
     },
     "autoload": {
         "psr-4": {
-            "SomeWork\\FeeCalculator\\": "src/"
+            "SomeWork\\MonetaryCalculator\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "SomeWork\\FeeCalculatorTests\\": "tests/"
+            "SomeWork\\MonetaryCalculatorTests\\": "tests/"
         }
     },
     "require-dev": {

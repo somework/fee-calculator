@@ -1,9 +1,11 @@
 <?php
 
-namespace SomeWork\FeeCalculator\Contracts\DTO;
+declare(strict_types=1);
 
-use SomeWork\FeeCalculator\DTO\Amount;
-use SomeWork\FeeCalculator\DTO\Currency;
+namespace SomeWork\MonetaryCalculator\Core\Contracts\DTO;
+
+use SomeWork\MonetaryCalculator\Core\DTO\Amount;
+use SomeWork\MonetaryCalculator\Core\DTO\Currency;
 
 interface AmountInterface
 {

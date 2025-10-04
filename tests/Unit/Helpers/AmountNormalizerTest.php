@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace SomeWork\FeeCalculatorTests\Unit\Helpers;
+namespace SomeWork\MonetaryCalculatorTests\Unit\Helpers;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use SomeWork\FeeCalculator\Helpers\AmountNormalizer;
+use SomeWork\MonetaryCalculator\Exception\Helper\LosePrecisionException;
+use SomeWork\MonetaryCalculator\Helpers\AmountNormalizer;
 
 final class AmountNormalizerTest extends TestCase
 {
@@ -27,9 +27,13 @@ final class AmountNormalizerTest extends TestCase
 
     public function testEnforceScaleRejectsPrecisionLoss(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-
-        AmountNormalizer::enforceScale('1.234', 2);
+        try {
+            AmountNormalizer::enforceScale('1.234', 2);
+            $this->fail('Expected LosePrecisionException to be thrown');
+        } catch (LosePrecisionException $e) {
+            self::assertSame('1.234', $e->getValue());
+            self::assertSame(3, $e->getScale()); // comparisonScale = max(2, 3) = 3
+        }
     }
 
     public function testEnforceScalePassesRepresentableValue(): void
