@@ -111,13 +111,10 @@ final class FeeCalculatorTest extends TestCase
     }
 
     /**
-     * @return array<string, array{string, string, Amount|null, int, string}>
+     * @return array<string, array{string, string, string|null, int, string}>
      */
     public static function forwardCalculationProvider(): array
     {
-        $usd = new Currency('USD', 2);
-        $btc = new Currency('BTC', 8);
-
         return [
             // Percent only calculations
             'percent_10' => ['100.00', '0.1', null, 2, '110.00'],
@@ -126,13 +123,13 @@ final class FeeCalculatorTest extends TestCase
             'percent_100' => ['100.00', '1.0', null, 2, '200.00'],      // 100% fee
 
             // Combined percent + fixed calculations
-            'combined_10_5' => ['100.00', '0.1', new Amount('5.00', $usd), 2, '115.00'],
-            'combined_5_10' => ['200.00', '0.05', new Amount('10.00', $usd), 2, '220.00'],
-            'combined_20_2.5' => ['50.00', '0.2', new Amount('2.50', $usd), 2, '62.50'],
+            'combined_10_5' => ['100.00', '0.1', '5.00', 2, '115.00'],
+            'combined_5_10' => ['200.00', '0.05', '10.00', 2, '220.00'],
+            'combined_20_2.5' => ['50.00', '0.2', '2.50', 2, '62.50'],
 
             // High precision calculations
             'high_precision_no_fixed' => ['1.00000000', '0.015', null, 8, '1.01500000'],
-            'high_precision_with_fixed' => ['0.10000000', '0.0225', new Amount('0.00100000', $btc), 8, '0.10325000'],
+            'high_precision_with_fixed' => ['0.10000000', '0.0225', '0.00100000', 8, '0.10325000'],
 
             // Different scales
             'no_decimals' => ['100', '0.1', null, 0, '110'],             // No decimals
@@ -162,13 +159,10 @@ final class FeeCalculatorTest extends TestCase
     }
 
     /**
-     * @return array<string, array{string, string, Amount|null, int, string}>
+     * @return array<string, array{string, string, string|null, int, string}>
      */
     public static function backwardCalculationProvider(): array
     {
-        $usd = new Currency('USD', 2);
-        $btc = new Currency('BTC', 8);
-
         return [
             // Percent only calculations
             'backward_10_percent' => ['110.00', '0.1', null, 2, '99.00'],
@@ -177,13 +171,13 @@ final class FeeCalculatorTest extends TestCase
             'backward_100_percent' => ['200.00', '1.0', null, 2, '0.00'],       // 100% fee
 
             // Combined percent + fixed calculations
-            'backward_combined_10_5' => ['115.00', '0.1', new Amount('5.00', $usd), 2, '99.99'],
-            'backward_combined_5_10' => ['230.00', '0.05', new Amount('10.00', $usd), 2, '209.52'],
-            'backward_combined_20_2.5' => ['62.50', '0.2', new Amount('2.50', $usd), 2, '49.99'],
+            'backward_combined_10_5' => ['115.00', '0.1', '5.00', 2, '99.99'],
+            'backward_combined_5_10' => ['230.00', '0.05', '10.00', 2, '209.52'],
+            'backward_combined_20_2.5' => ['62.50', '0.2', '2.50', 2, '49.99'],
 
             // High precision calculations
             'backward_high_precision_no_fixed' => ['1.01500000', '0.015', null, 8, '0.99977500'],
-            'backward_high_precision_with_fixed' => ['0.10325000', '0.0225', new Amount('0.00100000', $btc), 8, '0.09999999'],
+            'backward_high_precision_with_fixed' => ['0.10325000', '0.0225', '0.00100000', 8, '0.09999999'],
 
             // Different scales
             'backward_no_decimals' => ['110', '0.1', null, 0, '99'],             // No decimals
@@ -254,15 +248,13 @@ final class FeeCalculatorTest extends TestCase
     }
 
     /**
-     * @return array<string, array{string, string, Amount|null, int, string}>
+     * @return array<string, array{string, string, string|null, int, string}>
      */
     public static function roundTripCalculationProvider(): array
     {
-        $usd = new Currency('USD', 2);
-
         return [
             'round_trip_10_percent' => ['100.00', '0.1', null, 2, '99.00'], // Expected result after round trip
-            'round_trip_5_percent_fixed' => ['200.00', '0.05', new Amount('10.00', $usd), 2, '199.99'], // Expected result after round trip
+            'round_trip_5_percent_fixed' => ['200.00', '0.05', '10.00', 2, '199.99'], // Expected result after round trip
         ];
     }
 
