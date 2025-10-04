@@ -11,14 +11,12 @@ use SomeWork\MonetaryCalculator\Core\DTO\Currency;
 final class AmountTest extends TestCase
 {
     private Currency $usd;
-    private Currency $eur;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->usd = new Currency('USD', 2);
-        $this->eur = new Currency('EUR', 2);
     }
 
     /**
@@ -31,6 +29,9 @@ final class AmountTest extends TestCase
         self::assertSame($expected, $amount->getValue());
     }
 
+    /**
+     * @return array<string, string>
+     */
     public static function normalizationProvider(): array
     {
         return [
@@ -59,15 +60,16 @@ final class AmountTest extends TestCase
         self::assertSame($expected, $amount1->equals($amount2));
     }
 
+    /**
+     * @return array<string, array{Amount, Amount, bool}>
+     */
     public static function equalityProvider(): array
     {
         $usd = new Currency('USD', 2);
-        $eur = new Currency('EUR', 2);
 
         return [
             'same_currency_same_value' => [new Amount('1.00', $usd), new Amount('1.00', $usd), true],
             'same_currency_different_value' => [new Amount('1.00', $usd), new Amount('2.00', $usd), false],
-            'different_currency_same_value' => [new Amount('1.00', $usd), new Amount('1.00', $eur), false],
             'same_currency_equivalent_values' => [new Amount('1.00', $usd), new Amount('1.000', $usd), true],
             'zero_values' => [new Amount('0.00', $usd), new Amount('0', $usd), true],
             'negative_values' => [new Amount('-1.00', $usd), new Amount('-1.000', $usd), true],

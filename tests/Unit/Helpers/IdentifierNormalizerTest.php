@@ -50,7 +50,9 @@ final class IdentifierNormalizerTest extends TestCase
 
     public function testNormalizesResource(): void
     {
-        $resource = fopen('php://memory', 'r');
+        $resource = fopen('php://memory', 'rb');
+        self::assertIsResource($resource);
+
         $result = IdentifierNormalizer::normalize($resource);
         self::assertStringMatchesFormat('resource@%d', $result);
 

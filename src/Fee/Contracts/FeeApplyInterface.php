@@ -10,9 +10,9 @@ use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
 
 interface FeeApplyInterface
 {
-    public function applyForward(AmountInterface $amount, FeeInterface $fee);
+    public function applyForward(AmountInterface $amount, FeeInterface $fee): AmountInterface;
 
-    public function applyBackward(AmountInterface $amount, FeeInterface $fee);
+    public function applyBackward(AmountInterface $amount, FeeInterface $fee): AmountInterface;
 
     public function supportDirection(CalculationDirection $direction): bool;
 }

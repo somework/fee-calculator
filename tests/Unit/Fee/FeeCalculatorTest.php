@@ -29,7 +29,6 @@ final class FeeCalculatorTest extends TestCase
 {
     private Currency $usd;
     private Currency $eur;
-    private Currency $btc; // High precision currency for scale testing
     private FeeCalculator $calculator;
 
     protected function setUp(): void
@@ -37,7 +36,6 @@ final class FeeCalculatorTest extends TestCase
         parent::setUp();
         $this->usd = new Currency('USD', 2);
         $this->eur = new Currency('EUR', 2);
-        $this->btc = new Currency('BTC', 8);
         $this->calculator = new FeeCalculator();
     }
 
@@ -63,6 +61,9 @@ final class FeeCalculatorTest extends TestCase
         self::assertSame($currency->getIdentifier(), $result->getCurrency()->getIdentifier());
     }
 
+    /**
+     * @return array<string, array{string, string, int, string}>
+     */
     public static function percentageCalculationProvider(): array
     {
         return [
@@ -109,6 +110,9 @@ final class FeeCalculatorTest extends TestCase
         self::assertSame($currency->getIdentifier(), $result->getCurrency()->getIdentifier());
     }
 
+    /**
+     * @return array<string, array{string, string, Amount|null, int, string}>
+     */
     public static function forwardCalculationProvider(): array
     {
         return [
@@ -154,6 +158,9 @@ final class FeeCalculatorTest extends TestCase
         self::assertSame($currency->getIdentifier(), $result->getCurrency()->getIdentifier());
     }
 
+    /**
+     * @return array<string, array{string, string, Amount|null, int, string}>
+     */
     public static function backwardCalculationProvider(): array
     {
         return [
@@ -195,6 +202,9 @@ final class FeeCalculatorTest extends TestCase
         $this->calculator->calculateForward($amount1, $fee);
     }
 
+    /**
+     * @return array<string, array{Amount, Amount}>
+     */
     public static function currencyMismatchProvider(): array
     {
         $usd = new Currency('USD', 2);
@@ -232,11 +242,14 @@ final class FeeCalculatorTest extends TestCase
         self::assertTrue(
             bccomp($diff, $tolerance, $original->getCurrency()->getScale()) <= 0 &&
             bccomp($diff, '-' . $tolerance, $original->getCurrency()->getScale()) >= 0,
-            "Expected {$expectedAfterRoundTrip}, got {$calculatedOriginal->getValue()}"
+            "Expected $expectedAfterRoundTrip, got {$calculatedOriginal->getValue()}"
         );
         self::assertSame($original->getCurrency()->getIdentifier(), $calculatedOriginal->getCurrency()->getIdentifier());
     }
 
+    /**
+     * @return array<string, array{string, string, Amount|null, int, string}>
+     */
     public static function roundTripCalculationProvider(): array
     {
         return [
@@ -296,7 +309,7 @@ final class FeeCalculatorTest extends TestCase
         $amount = new Amount('100.00', $this->usd);
         $fee = new Fee('0.1');
 
-        $result = $this->calculator->calculate($amount, $fee, CalculationDirection::FORWARD);
+        $result = $this->calculator->calculate($amount, $fee);
 
         self::assertSame('110.00', $result->getValue());
     }

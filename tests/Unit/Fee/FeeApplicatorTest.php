@@ -15,15 +15,14 @@ use SomeWork\MonetaryCalculator\Fee\DTO\Fee;
 final class FeeApplicatorTest extends TestCase
 {
     private Currency $usd;
-    private FeeCalculator $calculator;
     private FeeApplicator $applicator;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->usd = new Currency('USD', 2);
-        $this->calculator = new FeeCalculator();
-        $this->applicator = new FeeApplicator($this->calculator);
+        $calculator = new FeeCalculator();
+        $this->applicator = new FeeApplicator($calculator);
     }
 
     public function testApplyForward(): void

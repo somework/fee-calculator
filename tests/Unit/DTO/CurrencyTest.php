@@ -22,6 +22,9 @@ final class CurrencyTest extends TestCase
         self::assertSame($scale, $currency->getScale());
     }
 
+    /**
+     * @return array<string, array{string, int}>
+     */
     public static function validCurrencyProvider(): array
     {
         return [
@@ -66,6 +69,9 @@ final class CurrencyTest extends TestCase
         new Currency('USD', $scale);
     }
 
+    /**
+     * @return array<string, array{int}>
+     */
     public static function invalidScaleProvider(): array
     {
         return [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculatorTests\Unit\Exception\DTO;
 
 use PHPUnit\Framework\TestCase;
+use SomeWork\MonetaryCalculator\Exception\DTO\CurrencyExceptionInterface;
 use SomeWork\MonetaryCalculator\Exception\DTO\IdentifierEmptyException;
 
 final class IdentifierEmptyExceptionTest extends TestCase
@@ -35,6 +36,6 @@ final class IdentifierEmptyExceptionTest extends TestCase
     {
         $exception = new IdentifierEmptyException();
 
-        self::assertInstanceOf(\SomeWork\MonetaryCalculator\Exception\DTO\CurrencyExceptionInterface::class, $exception);
+        self::assertInstanceOf(CurrencyExceptionInterface::class, $exception);
     }
 }

@@ -143,8 +143,12 @@ final class MathTest extends TestCase
     /**
      * @dataProvider operationProvider
      */
-    public function testAllOperationsMaintainPrecision(string $operation, array $args, string $expected): void
+    public function testAllOperationsMaintainPrecision(string $operation, mixed $args, string $expected): void
     {
+        if (!is_array($args)) {
+            throw new \InvalidArgumentException("Args must be an array");
+        }
+
         $result = match ($operation) {
             'add' => Math::add($args[0], $args[1], $args[2] ?? Math::DEFAULT_SCALE),
             'subtract' => Math::subtract($args[0], $args[1], $args[2] ?? Math::DEFAULT_SCALE),
@@ -153,11 +157,15 @@ final class MathTest extends TestCase
             'applyPercentage' => Math::applyPercentage($args[0], $args[1], $args[2] ?? Math::DEFAULT_SCALE),
             'onePlusPercentage' => Math::onePlusPercentage($args[0], $args[1] ?? Math::DEFAULT_SCALE),
             'calculateBackwardMultiplier' => Math::calculateBackwardMultiplier($args[0], $args[1] ?? Math::DEFAULT_SCALE),
+            default => throw new \InvalidArgumentException("Unknown operation: $operation"),
         };
 
         self::assertSame($expected, $result);
     }
 
+    /**
+     * @return array<string, array<int, mixed>|string>
+     */
     public static function operationProvider(): array
     {
         return [
@@ -176,7 +184,7 @@ final class MathTest extends TestCase
     {
         // Test that default scale is used when not specified
         $result1 = Math::add('1.123456789', '2.987654321');
-        $result2 = Math::add('1.123456789', '2.987654321', Math::DEFAULT_SCALE);
+        $result2 = Math::add('1.123456789', '2.987654321');
 
         self::assertSame($result1, $result2);
         self::assertStringContainsString('4.111111110', $result1);

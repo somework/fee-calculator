@@ -15,10 +15,11 @@ class ValidationException extends InvalidArgumentException implements Validation
         int $code = self::FIELD_VALIDATION_FAILED,
         ?\Throwable $previous = null
     ) {
+        $valueString = $value === null ? 'null' : (string) $value;
         $message = sprintf(
             'Validation failed for field "%s" with value "%s": %s',
             $field,
-            (string) $value,
+            $valueString,
             $rule
         );
 

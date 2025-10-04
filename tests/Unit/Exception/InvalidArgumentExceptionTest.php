@@ -6,6 +6,7 @@ namespace SomeWork\MonetaryCalculatorTests\Unit\Exception;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\MonetaryCalculator\Exception\InvalidArgumentException;
+use SomeWork\MonetaryCalculator\Exception\MonetaryCalculatorExceptionInterface;
 
 final class InvalidArgumentExceptionTest extends TestCase
 {
@@ -46,6 +47,6 @@ final class InvalidArgumentExceptionTest extends TestCase
     {
         $exception = new InvalidArgumentException();
 
-        self::assertInstanceOf(\SomeWork\MonetaryCalculator\Exception\MonetaryCalculatorExceptionInterface::class, $exception);
+        self::assertInstanceOf(MonetaryCalculatorExceptionInterface::class, $exception);
     }
 }
