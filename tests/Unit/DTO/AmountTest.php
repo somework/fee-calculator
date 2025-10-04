@@ -30,7 +30,7 @@ final class AmountTest extends TestCase
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, array{string, string}>
      */
     public static function normalizationProvider(): array
     {

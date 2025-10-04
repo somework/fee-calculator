@@ -68,24 +68,24 @@ final class FeeCalculatorTest extends TestCase
     {
         return [
             // Basic percentage calculations (using decimal format)
-            ['100.00', '0.1', 2, '10.00'],       // 10% of 100 = 10
-            ['100.00', '0.155', 2, '15.50'],     // 15.5% of 100 = 15.50
-            ['200.00', '0.05', 2, '10.00'],      // 5% of 200 = 10
+            '10_percent' => ['100.00', '0.1', 2, '10.00'],       // 10% of 100 = 10
+            '15.5_percent' => ['100.00', '0.155', 2, '15.50'],     // 15.5% of 100 = 15.50
+            '5_percent' => ['200.00', '0.05', 2, '10.00'],      // 5% of 200 = 10
 
             // Edge cases for percentages
-            ['100.00', '0.0', 2, '0.00'],        // 0% should give 0
-            ['100.00', '1.0', 2, '100.00'],     // 100% should give full amount
+            '0_percent' => ['100.00', '0.0', 2, '0.00'],        // 0% should give 0
+            '100_percent' => ['100.00', '1.0', 2, '100.00'],     // 100% should give full amount
 
             // High precision calculations
-            ['1.00000000', '0.015', 8, '0.01500000'],  // 1.5% of 1 BTC
-            ['0.10000000', '0.0225', 8, '0.00225000'], // 2.25% of 0.1 BTC
+            '1.5_percent_btc' => ['1.00000000', '0.015', 8, '0.01500000'],  // 1.5% of 1 BTC
+            '2.25_percent_small_btc' => ['0.10000000', '0.0225', 8, '0.00225000'], // 2.25% of 0.1 BTC
 
             // Very small percentages
-            ['1000.00', '0.0001', 2, '0.10'],   // 0.01% of 1000 = 0.10
+            '0.01_percent' => ['1000.00', '0.0001', 2, '0.10'],   // 0.01% of 1000 = 0.10
 
             // Different scales
-            ['100', '0.1', 0, '10'],             // No decimal places (10% of 100 = 10)
-            ['100.000', '0.1', 3, '10.000'],     // 3 decimal places
+            'no_decimals' => ['100', '0.1', 0, '10'],             // No decimal places (10% of 100 = 10)
+            '3_decimals' => ['100.000', '0.1', 3, '10.000'],     // 3 decimal places
         ];
     }
 
@@ -115,25 +115,28 @@ final class FeeCalculatorTest extends TestCase
      */
     public static function forwardCalculationProvider(): array
     {
+        $usd = new Currency('USD', 2);
+        $btc = new Currency('BTC', 8);
+
         return [
             // Percent only calculations
-            ['100.00', '0.1', null, 2, '110.00'],
-            ['250.50', '0.155', null, 2, '289.32'],
-            ['1000.00', '0.0', null, 2, '1000.00'],    // 0% fee
-            ['100.00', '1.0', null, 2, '200.00'],      // 100% fee
+            'percent_10' => ['100.00', '0.1', null, 2, '110.00'],
+            'percent_15.5' => ['250.50', '0.155', null, 2, '289.32'],
+            'percent_0' => ['1000.00', '0.0', null, 2, '1000.00'],    // 0% fee
+            'percent_100' => ['100.00', '1.0', null, 2, '200.00'],      // 100% fee
 
             // Combined percent + fixed calculations
-            ['100.00', '0.1', '5.00', 2, '115.00'],
-            ['200.00', '0.05', '10.00', 2, '220.00'],
-            ['50.00', '0.2', '2.50', 2, '62.50'],
+            'combined_10_5' => ['100.00', '0.1', new Amount('5.00', $usd), 2, '115.00'],
+            'combined_5_10' => ['200.00', '0.05', new Amount('10.00', $usd), 2, '220.00'],
+            'combined_20_2.5' => ['50.00', '0.2', new Amount('2.50', $usd), 2, '62.50'],
 
             // High precision calculations
-            ['1.00000000', '0.015', null, 8, '1.01500000'],
-            ['0.10000000', '0.0225', '0.00100000', 8, '0.10325000'],
+            'high_precision_no_fixed' => ['1.00000000', '0.015', null, 8, '1.01500000'],
+            'high_precision_with_fixed' => ['0.10000000', '0.0225', new Amount('0.00100000', $btc), 8, '0.10325000'],
 
             // Different scales
-            ['100', '0.1', null, 0, '110'],             // No decimals
-            ['100.000', '0.1', null, 3, '110.000'],    // 3 decimals
+            'no_decimals' => ['100', '0.1', null, 0, '110'],             // No decimals
+            '3_decimals' => ['100.000', '0.1', null, 3, '110.000'],    // 3 decimals
         ];
     }
 
@@ -163,25 +166,28 @@ final class FeeCalculatorTest extends TestCase
      */
     public static function backwardCalculationProvider(): array
     {
+        $usd = new Currency('USD', 2);
+        $btc = new Currency('BTC', 8);
+
         return [
             // Percent only calculations
-            ['110.00', '0.1', null, 2, '99.00'],
-            ['289.33', '0.155', null, 2, '244.49'],
-            ['1000.00', '0.0', null, 2, '1000.00'],    // 0% fee
-            ['200.00', '1.0', null, 2, '0.00'],       // 100% fee
+            'backward_10_percent' => ['110.00', '0.1', null, 2, '99.00'],
+            'backward_15.5_percent' => ['289.33', '0.155', null, 2, '244.49'],
+            'backward_0_percent' => ['1000.00', '0.0', null, 2, '1000.00'],    // 0% fee
+            'backward_100_percent' => ['200.00', '1.0', null, 2, '0.00'],       // 100% fee
 
             // Combined percent + fixed calculations
-            ['115.00', '0.1', '5.00', 2, '99.99'],
-            ['230.00', '0.05', '10.00', 2, '209.52'],
-            ['62.50', '0.2', '2.50', 2, '49.99'],
+            'backward_combined_10_5' => ['115.00', '0.1', new Amount('5.00', $usd), 2, '99.99'],
+            'backward_combined_5_10' => ['230.00', '0.05', new Amount('10.00', $usd), 2, '209.52'],
+            'backward_combined_20_2.5' => ['62.50', '0.2', new Amount('2.50', $usd), 2, '49.99'],
 
             // High precision calculations
-            ['1.01500000', '0.015', null, 8, '0.99977500'],
-            ['0.10325000', '0.0225', '0.00100000', 8, '0.09999999'],
+            'backward_high_precision_no_fixed' => ['1.01500000', '0.015', null, 8, '0.99977500'],
+            'backward_high_precision_with_fixed' => ['0.10325000', '0.0225', new Amount('0.00100000', $btc), 8, '0.09999999'],
 
             // Different scales
-            ['110', '0.1', null, 0, '99'],             // No decimals
-            ['110.000', '0.1', null, 3, '99.000'],    // 3 decimals
+            'backward_no_decimals' => ['110', '0.1', null, 0, '99'],             // No decimals
+            'backward_3_decimals' => ['110.000', '0.1', null, 3, '99.000'],    // 3 decimals
         ];
     }
 
@@ -203,7 +209,7 @@ final class FeeCalculatorTest extends TestCase
     }
 
     /**
-     * @return array<string, array{Amount, Amount}>
+     * @return array<string, array{Amount, Amount, string}>
      */
     public static function currencyMismatchProvider(): array
     {
@@ -211,7 +217,7 @@ final class FeeCalculatorTest extends TestCase
         $eur = new Currency('EUR', 2);
 
         return [
-            [new Amount('100.00', $usd), new Amount('50.00', $eur), 'addition'],
+            'usd_eur_mismatch' => [new Amount('100.00', $usd), new Amount('50.00', $eur), 'addition'],
         ];
     }
 
@@ -252,9 +258,11 @@ final class FeeCalculatorTest extends TestCase
      */
     public static function roundTripCalculationProvider(): array
     {
+        $usd = new Currency('USD', 2);
+
         return [
-            ['100.00', '0.1', null, 2, '99.00'], // Expected result after round trip
-            ['200.00', '0.05', '10.00', 2, '199.99'], // Expected result after round trip
+            'round_trip_10_percent' => ['100.00', '0.1', null, 2, '99.00'], // Expected result after round trip
+            'round_trip_5_percent_fixed' => ['200.00', '0.05', new Amount('10.00', $usd), 2, '199.99'], // Expected result after round trip
         ];
     }
 
