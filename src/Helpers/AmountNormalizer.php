@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace SomeWork\MonetaryCalculator\Helpers;
 
+use SomeWork\MonetaryCalculator\Core\Exception\InvalidScaleException;
 use SomeWork\MonetaryCalculator\Exception\Helper\LosePrecisionException;
 use SomeWork\MonetaryCalculator\Exception\Helper\NotDecimalStringException;
-use SomeWork\MonetaryCalculator\Core\Exception\InvalidScaleException;
 
 /**
  * Utility class for normalizing monetary amounts with precise decimal handling.
@@ -18,7 +18,7 @@ final class AmountNormalizer
 {
     private const DECIMAL_PATTERN = '/^-?(?:\d+)(?:\.\d+)?$/';
     private const DECIMAL_SEPARATOR = '.';
-    private const PRECISION_COMPARISON_SCALE = 10;
+
     /**
      * Normalizes a monetary value to the specified decimal scale.
      *

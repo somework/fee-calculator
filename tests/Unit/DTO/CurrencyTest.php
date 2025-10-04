@@ -6,8 +6,8 @@ namespace SomeWork\MonetaryCalculatorTests\Unit\DTO;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\MonetaryCalculator\Core\DTO\Currency;
-use SomeWork\MonetaryCalculator\Exception\DTO\IdentifierEmptyException;
 use SomeWork\MonetaryCalculator\Core\Exception\InvalidScaleException;
+use SomeWork\MonetaryCalculator\Exception\DTO\IdentifierEmptyException;
 
 final class CurrencyTest extends TestCase
 {

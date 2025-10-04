@@ -74,4 +74,3 @@ final class FeeTest extends TestCase
         self::assertSame('1', $fee->getPercent());
     }
 }
-

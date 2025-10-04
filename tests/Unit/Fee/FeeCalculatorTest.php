@@ -8,10 +8,10 @@ use PHPUnit\Framework\TestCase;
 use SomeWork\MonetaryCalculator\Core\Contracts\DTO\AmountInterface;
 use SomeWork\MonetaryCalculator\Core\DTO\Amount;
 use SomeWork\MonetaryCalculator\Core\DTO\Currency;
-use SomeWork\MonetaryCalculator\Fee\DTO\Fee;
-use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
 use SomeWork\MonetaryCalculator\Core\Exception\CurrencyOperationException;
+use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
 use SomeWork\MonetaryCalculator\Fee\Calculator\FeeCalculator;
+use SomeWork\MonetaryCalculator\Fee\DTO\Fee;
 
 /**
  * Comprehensive tests for FeeCalculator with data providers covering edge cases.

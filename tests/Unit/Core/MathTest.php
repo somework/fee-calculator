@@ -145,7 +145,7 @@ final class MathTest extends TestCase
      */
     public function testAllOperationsMaintainPrecision(string $operation, array $args, string $expected): void
     {
-        $result = match($operation) {
+        $result = match ($operation) {
             'add' => Math::add($args[0], $args[1], $args[2] ?? Math::DEFAULT_SCALE),
             'subtract' => Math::subtract($args[0], $args[1], $args[2] ?? Math::DEFAULT_SCALE),
             'multiply' => Math::multiply($args[0], $args[1], $args[2] ?? Math::DEFAULT_SCALE),

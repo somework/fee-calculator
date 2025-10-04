@@ -13,8 +13,8 @@ class CurrencyOperationException extends InvalidArgumentException
     public function __construct(
         private readonly CurrencyInterface $currency1,
         private readonly CurrencyInterface $currency2,
-        private readonly string            $operation,
-        ?\Throwable                        $previous = null
+        private readonly string $operation,
+        ?\Throwable $previous = null
     ) {
         $message = sprintf(
             'Cannot perform %s operation between different currencies: %s and %s',

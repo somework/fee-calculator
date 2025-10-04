@@ -7,10 +7,10 @@ namespace SomeWork\MonetaryCalculatorTests\Unit\Fee;
 use PHPUnit\Framework\TestCase;
 use SomeWork\MonetaryCalculator\Core\DTO\Amount;
 use SomeWork\MonetaryCalculator\Core\DTO\Currency;
-use SomeWork\MonetaryCalculator\Fee\DTO\Fee;
 use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
 use SomeWork\MonetaryCalculator\Fee\Applicator\FeeApplicator;
 use SomeWork\MonetaryCalculator\Fee\Calculator\FeeCalculator;
+use SomeWork\MonetaryCalculator\Fee\DTO\Fee;
 
 final class FeeApplicatorTest extends TestCase
 {
@@ -54,4 +54,3 @@ final class FeeApplicatorTest extends TestCase
         self::assertTrue($this->applicator->supportDirection(CalculationDirection::BACKWARD));
     }
 }
-

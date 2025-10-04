@@ -7,8 +7,8 @@ namespace SomeWork\MonetaryCalculator\Exception\Helper;
 class LosePrecisionException extends NormalizerException
 {
     public function __construct(
-        private string $value,
-        private int $scale,
+        private readonly string $value,
+        private readonly int $scale,
         ?\Throwable $previous = null
     ) {
         parent::__construct(

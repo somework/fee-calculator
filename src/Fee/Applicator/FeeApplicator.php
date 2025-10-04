@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculator\Fee\Applicator;
 
 use SomeWork\MonetaryCalculator\Core\Contracts\DTO\AmountInterface;
+use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
+use SomeWork\MonetaryCalculator\Fee\Contracts\Calculator\FeeCalculatorInterface;
 use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
 use SomeWork\MonetaryCalculator\Fee\Contracts\FeeApplyInterface;
-use SomeWork\MonetaryCalculator\Fee\Contracts\Calculator\FeeCalculatorInterface;
-use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
 
 class FeeApplicator implements FeeApplyInterface
 {
@@ -34,4 +34,3 @@ class FeeApplicator implements FeeApplyInterface
         return true; // Supports both directions
     }
 }
-

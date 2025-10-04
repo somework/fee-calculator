@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculator\Core\DTO;
 
 use SomeWork\MonetaryCalculator\Core\Contracts\DTO\CurrencyInterface;
-use SomeWork\MonetaryCalculator\Exception\DTO\IdentifierEmptyException;
 use SomeWork\MonetaryCalculator\Core\Exception\InvalidScaleException;
+use SomeWork\MonetaryCalculator\Exception\DTO\IdentifierEmptyException;
 
 class Currency implements CurrencyInterface
 {
     public function __construct(
         protected mixed $identifier,
-        protected int   $scale
+        protected int $scale
     ) {
         if (!$this->identifier) {
             throw new IdentifierEmptyException();

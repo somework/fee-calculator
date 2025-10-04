@@ -96,4 +96,3 @@ final class FeeValidatorTest extends TestCase
         FeeValidator::validateCalculationAmount($negativeAmount);
     }
 }
-

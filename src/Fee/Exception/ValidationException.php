@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculator\Fee\Exception;
 
 use SomeWork\MonetaryCalculator\Exception\InvalidArgumentException;
-use SomeWork\MonetaryCalculator\Exception\MonetaryCalculatorExceptionInterface;
 
-class ValidationException extends InvalidArgumentException implements ValidationExceptionInterface, MonetaryCalculatorExceptionInterface
+class ValidationException extends InvalidArgumentException implements ValidationExceptionInterface
 {
     public function __construct(
-        private string $field,
-        private mixed $value,
-        private string $rule,
+        private readonly string $field,
+        private readonly mixed $value,
+        private readonly string $rule,
         int $code = self::FIELD_VALIDATION_FAILED,
         ?\Throwable $previous = null
     ) {

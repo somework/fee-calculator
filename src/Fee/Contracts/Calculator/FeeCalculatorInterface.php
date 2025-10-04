@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculator\Fee\Contracts\Calculator;
 
 use SomeWork\MonetaryCalculator\Core\Contracts\DTO\AmountInterface;
-use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
 use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
+use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
 
 interface FeeCalculatorInterface
 {
@@ -20,4 +20,3 @@ interface FeeCalculatorInterface
 
     public function calculateBackward(AmountInterface $amount, FeeInterface $fee): AmountInterface;
 }
-

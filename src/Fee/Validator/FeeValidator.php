@@ -34,7 +34,7 @@ final class FeeValidator
     {
         self::validatePercentage($fee->getPercent());
 
-        if ($fee->hasFixedAmount()) {
+        if ($fee->getFixed()) {
             self::validateAmountNotNegative($fee->getFixed());
         }
     }
@@ -46,4 +46,3 @@ final class FeeValidator
         }
     }
 }
-

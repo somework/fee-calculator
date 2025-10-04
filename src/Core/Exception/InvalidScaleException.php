@@ -9,7 +9,7 @@ class InvalidScaleException extends InvalidArgumentException
 {
     public function __construct(
         private readonly int $scale,
-        ?\Throwable          $previous = null
+        ?\Throwable $previous = null
     ) {
         $message = sprintf(
             'Scale %d is invalid. Scale must be a non-negative integer.',

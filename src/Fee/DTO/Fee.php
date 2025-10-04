@@ -11,7 +11,7 @@ use SomeWork\MonetaryCalculator\Fee\Validator\FeeValidator;
 class Fee implements FeeInterface
 {
     public function __construct(
-        private readonly string           $percent,
+        private readonly string $percent,
         private readonly ?AmountInterface $fixed = null
     ) {
         FeeValidator::validatePercentage($percent);
@@ -32,4 +32,3 @@ class Fee implements FeeInterface
         return $this->fixed !== null;
     }
 }
-

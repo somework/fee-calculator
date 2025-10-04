@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculator\Fee\Calculator;
 
 use SomeWork\MonetaryCalculator\Core\Contracts\DTO\AmountInterface;
+use SomeWork\MonetaryCalculator\Core\DTO\Amount;
 use SomeWork\MonetaryCalculator\Core\Exception\CurrencyOperationException;
+use SomeWork\MonetaryCalculator\Core\Math;
 use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
 use SomeWork\MonetaryCalculator\Fee\Contracts\Calculator\FeeCalculatorInterface;
 use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
-use SomeWork\MonetaryCalculator\Core\Math;
+use SomeWork\MonetaryCalculator\Fee\Validator\FeeValidator;
 
 /**
  * Core calculator for fee operations with support for forward and backward calculations.
@@ -27,8 +29,8 @@ class FeeCalculator implements FeeCalculatorInterface
      */
     private function validateInputs(AmountInterface $amount, FeeInterface $fee): void
     {
-        \SomeWork\MonetaryCalculator\Fee\Validator\FeeValidator::validateFeeStructure($fee);
-        \SomeWork\MonetaryCalculator\Fee\Validator\FeeValidator::validateCalculationAmount($amount);
+        FeeValidator::validateFeeStructure($fee);
+        FeeValidator::validateCalculationAmount($amount);
     }
 
     public function calculate(
@@ -49,7 +51,7 @@ class FeeCalculator implements FeeCalculatorInterface
 
         $percentAmount = $this->calculatePercentAmount($amount, $fee);
 
-        if ($fee->hasFixedAmount()) {
+        if ($fee->getFixed()) {
             $totalFee = $this->addAmounts($percentAmount, $fee->getFixed());
             return $this->addAmounts($amount, $totalFee);
         }
@@ -61,7 +63,7 @@ class FeeCalculator implements FeeCalculatorInterface
     {
         $this->validateInputs($amount, $fee);
 
-        if (!$fee->hasFixedAmount()) {
+        if (!$fee->getFixed()) {
             $percentAmount = $this->calculatePercentAmount($amount, $fee);
             return $this->subtractAmounts($amount, $percentAmount);
         }
@@ -73,8 +75,7 @@ class FeeCalculator implements FeeCalculatorInterface
         // amount - F = O * (1 + P/100)
         // O = (amount - F) / (1 + P/100)
 
-        $fixedAmount = $fee->getFixed();
-        $subtotal = $this->subtractAmounts($amount, $fixedAmount);
+        $subtotal = $this->subtractAmounts($amount, $fee->getFixed());
 
         // Percentage is in decimal format (e.g., "0.155" for 15.5%)
         $multiplier = Math::calculateBackwardMultiplier($fee->getPercent());
@@ -85,7 +86,7 @@ class FeeCalculator implements FeeCalculatorInterface
             $amount->getCurrency()->getScale()
         );
 
-        return new \SomeWork\MonetaryCalculator\Core\DTO\Amount($originalAmount, $amount->getCurrency());
+        return new Amount($originalAmount, $amount->getCurrency());
     }
 
     private function calculatePercentAmount(AmountInterface $amount, FeeInterface $fee): AmountInterface
@@ -97,7 +98,7 @@ class FeeCalculator implements FeeCalculatorInterface
             $amount->getCurrency()->getScale()
         );
 
-        return new \SomeWork\MonetaryCalculator\Core\DTO\Amount($percentValue, $amount->getCurrency());
+        return new Amount($percentValue, $amount->getCurrency());
     }
 
     private function addAmounts(AmountInterface $amount1, AmountInterface $amount2): AmountInterface
@@ -112,7 +113,7 @@ class FeeCalculator implements FeeCalculatorInterface
             $amount1->getCurrency()->getScale()
         );
 
-        return new \SomeWork\MonetaryCalculator\Core\DTO\Amount($sum, $amount1->getCurrency());
+        return new Amount($sum, $amount1->getCurrency());
     }
 
     private function subtractAmounts(AmountInterface $amount1, AmountInterface $amount2): AmountInterface
@@ -127,7 +128,6 @@ class FeeCalculator implements FeeCalculatorInterface
             $amount1->getCurrency()->getScale()
         );
 
-        return new \SomeWork\MonetaryCalculator\Core\DTO\Amount($difference, $amount1->getCurrency());
+        return new Amount($difference, $amount1->getCurrency());
     }
 }
-

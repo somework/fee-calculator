@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace SomeWork\MonetaryCalculator\Fee\Contracts;
 
 use SomeWork\MonetaryCalculator\Core\Contracts\DTO\AmountInterface;
-use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
 use SomeWork\MonetaryCalculator\Enum\CalculationDirection;
+use SomeWork\MonetaryCalculator\Fee\Contracts\DTO\FeeInterface;
 
 interface FeeApplyInterface
 {
